@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "reenchanted",
+	"version": "${version}",
+	"name": "Reenchanted",
+	"description": "An overhaul to vanilla's enchants to make them slightly more interesting.",
+	"authors": [
+		"Paul Marmet"
+	],
+	"contact": {
+		"sources": "https://github.com/PaulMarmet/reenchanted"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/reenchanted/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.pm.Reenchanted"
+		]
+	},
+	"mixins": [
+		"reenchanted.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": "~1.21",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
