@@ -1,0 +1,12 @@
+{
+  "values": [
+    "minecraft:sharpness",
+    "minecraft:breach",
+    "minecraft:density",
+    "minecraft:knockback",
+    "minecraft:fortune",
+    "minecraft:looting",
+    "minecraft:silk_touch",
+    "minecraft:efficiency"
+  ]
+}

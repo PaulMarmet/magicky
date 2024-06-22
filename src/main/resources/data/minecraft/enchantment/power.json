@@ -1,0 +1,42 @@
+{
+  "anvil_cost": 1,
+  "description": {
+    "translate": "enchantment.minecraft.power"
+  },
+  "effects": {
+    "minecraft:damage": [
+      {
+        "effect": {
+          "type": "minecraft:add",
+          "value": {
+            "type": "minecraft:linear",
+            "base": 3.0,
+            "per_level_above_first": 0.5
+          }
+        },
+        "requirements": {
+          "condition": "minecraft:entity_properties",
+          "entity": "direct_attacker",
+          "predicate": {
+            "type": "#minecraft:arrows"
+          }
+        }
+      }
+    ]
+  },
+  "exclusive_set": "#reenchanted:exclusive_set/specialization_bow",
+  "max_cost": {
+    "base": 66,
+    "per_level_above_first": 10
+  },
+  "max_level": 1,
+  "min_cost": {
+    "base": 30,
+    "per_level_above_first": 10
+  },
+  "slots": [
+    "mainhand"
+  ],
+  "supported_items": "#minecraft:enchantable/bow",
+  "weight": 10
+}
