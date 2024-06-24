@@ -24,7 +24,7 @@
       }
     ]
   },
-  "exclusive_set": "#reenchanted:exclusive_set/specialization_bow",
+  "exclusive_set": "#magicky:exclusive_set/specialization_bow",
   "max_cost": {
     "base": 37,
     "per_level_above_first": 20

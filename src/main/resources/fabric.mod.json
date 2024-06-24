@@ -1,25 +1,25 @@
 {
 	"schemaVersion": 1,
-	"id": "reenchanted",
+	"id": "magicky",
 	"version": "${version}",
-	"name": "Reenchanted",
+	"name": "Magicky",
 	"description": "An overhaul to vanilla's enchants to make them slightly more interesting.",
 	"authors": [
 		"Paul Marmet"
 	],
 	"contact": {
-		"sources": "https://github.com/PaulMarmet/reenchanted"
+		"sources": "https://github.com/PaulMarmet/magicky"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/reenchanted/icon.png",
+	"icon": "assets/magicky/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"net.pm.Reenchanted"
+			"net.pm.Magicky"
 		]
 	},
 	"mixins": [
-		"reenchanted.mixins.json"
+		"magicky.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.11",

@@ -75,7 +75,7 @@
             "value": {
               "type": "minecraft:linear",
               "base": 3.0,
-              "per_level_above_first": 1.0
+              "per_level_above_first": 1.5
             }
           },
           "trigger_game_event": "minecraft:block_place"
@@ -103,7 +103,7 @@
     "per_level_above_first": 10
   },
   "slots": [
-    "any"
+    "armor"
   ],
   "supported_items": "#minecraft:enchantable/foot_armor",
   "weight": 2

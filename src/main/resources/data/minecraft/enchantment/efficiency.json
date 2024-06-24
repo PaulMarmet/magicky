@@ -16,7 +16,7 @@
       }
     ]
   },
-  "exclusive_set": "#reenchanted:exclusive_set/specialization",
+  "exclusive_set": "#magicky:exclusive_set/specialization",
   "max_cost": {
     "base": 51,
     "per_level_above_first": 10

@@ -1,0 +1,17 @@
+{
+  "enchantment.magicky.magic_protection" : "Magic Protection",
+  "enchantment.magicky.magic_protection.desc" : "An enchantment that protects it's wearer against magical attacks.",
+  "enchantment.magicky.removed" : "Unusable Enchantment",
+  "enchantment.magicky.removed.desc" : "How did you even get this? lol",
+
+  "tag.enchantment.magicky.exclusive_set/blade_addition" : "Blade Addition",
+  "tag.enchantment.magicky.exclusive_set/generalized_protection" : "Generalized Protection",
+  "tag.enchantment.magicky.exclusive_set/special_damage" : "Specialized Damage",
+  "tag.enchantment.magicky.exclusive_set/specialization" : "Specialization",
+  "tag.enchantment.magicky.exclusive_set/specialization_bow" : "Bow Specialization",
+  "tag.enchantment.magicky.exclusive_set/specialized_protection" : "Specialized Protection",
+
+  "tag.item.magicky.enchantable.none" : "None",
+  "tag.item.magicky.enchantable.frosting" : "Frostable",
+  "tag.item.magicky.pet_armor" : "Pet Armor"
+}

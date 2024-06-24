@@ -1,11 +1,11 @@
 {
   "anvil_cost": 99,
   "description": {
-    "translate": "enchantment.reenchanted.removed"
+    "translate": "enchantment.magicky.removed"
   },
   "effects": {
   },
-  "exclusive_set": "#reenchanted:exclusive_set/specialization",
+  "exclusive_set": "#magicky:exclusive_set/specialization",
   "max_cost": {
     "base": 99,
     "per_level_above_first": 99
@@ -17,6 +17,6 @@
   },
   "slots": [
   ],
-  "supported_items": "#reenchanted:enchantable/none",
+  "supported_items": "#magicky:enchantable/none",
   "weight": 1
 }

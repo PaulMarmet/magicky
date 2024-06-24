@@ -25,7 +25,7 @@
       }
     ]
   },
-  "exclusive_set": "#reenchanted:exclusive_set/blade_addition",
+  "exclusive_set": "#magicky:exclusive_set/blade_addition",
   "max_cost": {
     "base": 29,
     "per_level_above_first": 9

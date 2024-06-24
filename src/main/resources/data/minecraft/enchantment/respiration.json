@@ -1,7 +1,7 @@
 {
   "anvil_cost": 99,
   "description": {
-    "translate": "enchantment.reenchanted.removed"
+    "translate": "enchantment.magicky.removed"
   },
   "effects": {
   },
@@ -16,6 +16,6 @@
   },
   "slots": [
   ],
-  "supported_items": "#reenchanted:enchantable/none",
+  "supported_items": "#magicky:enchantable/none",
   "weight": 1
 }

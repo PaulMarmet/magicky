@@ -60,7 +60,7 @@
       }
     ]
   },
-  "exclusive_set": "#reenchanted:exclusive_set/special_damage",
+  "exclusive_set": "#magicky:exclusive_set/special_damage",
   "max_cost": {
     "base": 50,
     "per_level_above_first": 8

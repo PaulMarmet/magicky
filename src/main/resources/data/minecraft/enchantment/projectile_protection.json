@@ -32,7 +32,7 @@
       }
     ]
   },
-  "exclusive_set": "#minecraft:exclusive_set/armor",
+  "exclusive_set": "#magicky:exclusive_set/specialized_protection",
   "max_cost": {
     "base": 9,
     "per_level_above_first": 18

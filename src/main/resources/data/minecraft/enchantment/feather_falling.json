@@ -32,7 +32,7 @@
       }
     ]
   },
-  "exclusive_set": "#reenchanted:exclusive_set/specialized_protection",
+  "exclusive_set": "#magicky:exclusive_set/specialized_protection",
   "max_cost": {
     "base": 11,
     "per_level_above_first": 18
