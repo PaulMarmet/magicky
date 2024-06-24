@@ -6,10 +6,10 @@
 
   "tag.enchantment.magicky.exclusive_set/blade_addition" : "Blade Addition",
   "tag.enchantment.magicky.exclusive_set/generalized_protection" : "Generalized Protection",
-  "tag.enchantment.magicky.exclusive_set/special_damage" : "Specialized Damage",
-  "tag.enchantment.magicky.exclusive_set/specialization" : "Specialization",
-  "tag.enchantment.magicky.exclusive_set/specialization_bow" : "Bow Specialization",
   "tag.enchantment.magicky.exclusive_set/specialized_protection" : "Specialized Protection",
+  "tag.enchantment.magicky.exclusive_set/specialization" : "Specialization",
+  "tag.enchantment.magicky.exclusive_set/special_damage" : "Specialized Damage",
+  "tag.enchantment.magicky.exclusive_set/specialization_bow" : "Specialized Bow",
 
   "tag.item.magicky.enchantable.none" : "None",
   "tag.item.magicky.enchantable.frosting" : "Frostable",
