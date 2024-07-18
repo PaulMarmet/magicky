@@ -2,6 +2,7 @@ package net.pm.magicky;
 
 import net.fabricmc.api.ModInitializer;
 
+import net.pm.magicky.screen.MagickyScreenHandlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,5 +12,6 @@ public class Magicky implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		MagickyScreenHandlers.registerScreenHandlers();
 	}
 }

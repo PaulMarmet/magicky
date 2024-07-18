@@ -16,6 +16,9 @@
 	"entrypoints": {
 		"main": [
 			"net.pm.magicky.Magicky"
+		],
+		"client": [
+			"net.pm.magicky.MagickyClient"
 		]
 	},
 	"mixins": [

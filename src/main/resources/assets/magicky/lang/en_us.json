@@ -13,5 +13,7 @@
 
   "tag.item.magicky.enchantable.none" : "None",
   "tag.item.magicky.enchantable.frosting" : "Frostable",
-  "tag.item.magicky.pet_armor" : "Pet Armor"
+  "tag.item.magicky.pet_armor" : "Pet Armor",
+
+  "gui.magicky.anvil.title" : "Repair"
 }

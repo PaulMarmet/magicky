@@ -1,6 +1,5 @@
 package net.pm.magicky.screen;
 
-import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.block.AnvilBlock;
 import net.minecraft.block.Block;
@@ -17,43 +16,35 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.screen.*;
 import net.minecraft.screen.slot.ForgingSlotsManager;
-import net.minecraft.text.Text;
-import net.minecraft.util.StringHelper;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.WorldEvents;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
 public class AnvilScreenHandlerM extends ForgingScreenHandler {
-    public static final int INPUT_1_ID = 0;
-    public static final int INPUT_2_ID = 1;
-    public static final int OUTPUT_ID = 2;
-    private static final Logger LOGGER = LogUtils.getLogger();
-//    private static final boolean field_30752 = false;
+//    public static final int INPUT_1_ID = 0;
+//    public static final int INPUT_2_ID = 1;
+//    public static final int OUTPUT_ID = 2;
+//    private static final Logger LOGGER = LogUtils.getLogger();
 //    public static final int MAX_NAME_LENGTH = 50;
     private int repairItemUsage;
-    @Nullable
-    private String newItemName;
+//    @Nullable
+//    private String newItemName;
     private final Property levelCost = Property.create();
-//    private static final int field_30753 = 0;
-//    private static final int field_30754 = 1;
-//    private static final int field_30755 = 1;
-//    private static final int field_30747 = 1;
-//    private static final int field_30748 = 2;
-//    private static final int field_30749 = 1;
-//    private static final int field_30750 = 1;
-    private static final int INPUT_1_X = 27;
-    private static final int INPUT_2_X = 76;
-    private static final int OUTPUT_X = 134;
-    private static final int SLOT_Y = 47;
+//    private static final int INPUT_1_X = 27;
+//    private static final int INPUT_2_X = 76;
+//    private static final int OUTPUT_X = 134;
+//    private static final int SLOT_Y = 47;
 
     public AnvilScreenHandlerM(int syncId, PlayerInventory inventory) {
         this(syncId, inventory, ScreenHandlerContext.EMPTY);
     }
 
     public AnvilScreenHandlerM(int syncId, PlayerInventory inventory, ScreenHandlerContext context) {
-        super(ScreenHandlerType.ANVIL, syncId, inventory, context);
+        super(MagickyScreenHandlers.ANVIL_M, syncId, inventory, context);
+//        super(ScreenHandlerType.ANVIL, syncId, inventory, context);
         this.addProperty(this.levelCost);
+    }
+
+    public AnvilScreenHandlerM(int syncId, PlayerInventory inventory, Object o) {
+        this(syncId, inventory, ScreenHandlerContext.EMPTY);
     }
 
     @Override
@@ -180,6 +171,7 @@ public class AnvilScreenHandlerM extends ForgingScreenHandler {
                     boolean bl2 = false;
                     boolean bl3 = false;
 
+                    //enchantment section that i totally wont remove later
                     //for all the enchants on input 2
                     for (Object2IntMap.Entry<RegistryEntry<Enchantment>> entry : itemEnchantmentsComponent.getEnchantmentEntries()) {
                         RegistryEntry<Enchantment> registryEntry = (RegistryEntry<Enchantment>)entry.getKey();
@@ -221,14 +213,14 @@ public class AnvilScreenHandlerM extends ForgingScreenHandler {
                             //math for the xp cost
                             int s = enchantment.getAnvilCost();
                             if (bl) {
-                                s = Math.max(1, s / 2);
+                                s = Math.max(1, s);
                             }
 
                             //add to xp cost base enchant cost / 2 times the level
                             i += s * r;
-                            //if multiple items are present, set cost (above limit?)
+                            //if multiple items are present, multiply cost by number of items
                             if (itemStack.getCount() > 1) {
-                                i = 40;
+                                i = i * itemStack.getCount();
                             }
                         }
                     }
@@ -240,8 +232,13 @@ public class AnvilScreenHandlerM extends ForgingScreenHandler {
                         return;
                     }
 
-                    if (itemStack3.contains(DataComponentTypes.CUSTOM_NAME) && (itemStack3.isOf(Items.NAME_TAG) || !itemStack.contains(DataComponentTypes.CUSTOM_NAME))) {
+                    //if input 2 is a name tag or input 1 doesnt have a name
+                    if (itemStack3.isOf(Items.NAME_TAG) || !itemStack.contains(DataComponentTypes.CUSTOM_NAME)) {
                         itemStack2.set(DataComponentTypes.CUSTOM_NAME, itemStack3.getName());
+                        //if input 2 doesnt have a name, clear the custom name tag for the output(resetting the output's name to the item name)
+                        if (!itemStack3.contains(DataComponentTypes.CUSTOM_NAME)) {
+                            itemStack2.remove(DataComponentTypes.CUSTOM_NAME);
+                        }
                         i += 1;
                     }
                 }
@@ -268,36 +265,6 @@ public class AnvilScreenHandlerM extends ForgingScreenHandler {
             this.levelCost.set(0);
         }
     }
-//
-//    public static int getNextCost(int cost) {
-//        return (int)Math.min((long)cost * 2L + 1L, 2147483647L);
-//    }
-//
-//    public boolean setNewItemName(String newItemName) {
-//        String string = sanitize(newItemName);
-//        if (string != null && !string.equals(this.newItemName)) {
-//            this.newItemName = string;
-//            if (this.getSlot(2).hasStack()) {
-//                ItemStack itemStack = this.getSlot(2).getStack();
-//                if (StringHelper.isBlank(string)) {
-//                    itemStack.remove(DataComponentTypes.CUSTOM_NAME);
-//                } else {
-//                    itemStack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(string));
-//                }
-//            }
-//
-//            this.updateResult();
-//            return true;
-//        } else {
-//            return false;
-//        }
-//    }
-//
-//    @Nullable
-//    private static String sanitize(String name) {
-//        String string = StringHelper.stripInvalidChars(name);
-//        return string.length() <= 50 ? string : null;
-//    }
 
     public int getLevelCost() {
         return this.levelCost.get();
