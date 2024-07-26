@@ -39,7 +39,6 @@ public class AnvilScreenHandlerM extends ForgingScreenHandler {
 
     public AnvilScreenHandlerM(int syncId, PlayerInventory inventory, ScreenHandlerContext context) {
         super(MagickyScreenHandlers.ANVIL_M, syncId, inventory, context);
-//        super(ScreenHandlerType.ANVIL, syncId, inventory, context);
         this.addProperty(this.levelCost);
     }
 

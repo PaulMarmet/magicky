@@ -15,5 +15,6 @@
   "tag.item.magicky.enchantable.frosting" : "Frostable",
   "tag.item.magicky.pet_armor" : "Pet Armor",
 
-  "gui.magicky.anvil.title" : "Repair"
+  "gui.magicky.anvil.title" : "Repair",
+  "gui.magicky.name_tag.title": "Rename Name Tag"
 }

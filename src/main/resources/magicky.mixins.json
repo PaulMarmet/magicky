@@ -3,9 +3,14 @@
   "package": "net.pm.magicky.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "AnvilBlockMixin"
+    "AnvilBlockMixin",
+    "NameTagItemMixin",
+    "PlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-	}
+  },
+  "client": [
+    "ClientPlayerMixin"
+  ]
 }
