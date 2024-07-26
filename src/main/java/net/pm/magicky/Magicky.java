@@ -29,7 +29,6 @@ public class Magicky implements ModInitializer {
 			} else {
 				itemStack.set(DataComponentTypes.CUSTOM_NAME, Text.of(payload.name()));
 			}
-			LOGGER.info(payload.name());
 		});
 	}
 }
