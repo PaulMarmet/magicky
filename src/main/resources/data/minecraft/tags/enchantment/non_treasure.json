@@ -1,4 +1,5 @@
 {
+  "replace": true,
   "values": [
     "minecraft:fire_protection",
     "minecraft:feather_falling",

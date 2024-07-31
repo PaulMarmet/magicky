@@ -10,10 +10,12 @@
   "tag.enchantment.magicky.exclusive_set/specialization" : "Specialization",
   "tag.enchantment.magicky.exclusive_set/special_damage" : "Specialized Damage",
   "tag.enchantment.magicky.exclusive_set/specialization_bow" : "Specialized Bow",
+  "tag.enchantment.magicky.luck_affected" : "Luck Affected",
 
   "tag.item.magicky.enchantable.none" : "None",
   "tag.item.magicky.enchantable.frosting" : "Frostable",
   "tag.item.magicky.pet_armor" : "Pet Armor",
+  "tag.item.magicky.lucky" : "Lucky",
 
   "gui.magicky.anvil.title" : "Repair",
   "gui.magicky.name_tag.title": "Rename Name Tag"

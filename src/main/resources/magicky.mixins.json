@@ -4,8 +4,10 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AnvilBlockMixin",
+    "EnchantmentHelperMixin",
     "NameTagItemMixin",
-    "PlayerMixin"
+    "PlayerMixin",
+    "ToolMaterialsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

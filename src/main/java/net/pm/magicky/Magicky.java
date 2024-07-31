@@ -30,5 +30,7 @@ public class Magicky implements ModInitializer {
 				itemStack.set(DataComponentTypes.CUSTOM_NAME, Text.of(payload.name()));
 			}
 		});
+
+		MagickyTags.registerTags();
 	}
 }
