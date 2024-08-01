@@ -8,6 +8,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
+import net.pm.magicky.enchantment.MagickyEnchantments;
 import net.pm.magicky.packet.RenameNameTagPayload;
 import net.pm.magicky.screen.MagickyScreenHandlers;
 import org.slf4j.Logger;
@@ -32,5 +33,6 @@ public class Magicky implements ModInitializer {
 		});
 
 		MagickyTags.registerTags();
+		MagickyEnchantments.registerEnchantments();
 	}
 }

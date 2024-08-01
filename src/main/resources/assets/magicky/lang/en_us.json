@@ -1,6 +1,8 @@
 {
   "enchantment.magicky.magic_protection" : "Magic Protection",
   "enchantment.magicky.magic_protection.desc" : "An enchantment that protects it's wearer against magical attacks.",
+  "enchantment.magicky.recoil": "Recoil",
+  "enchantment.magicky.recoil.desc": "Launches you backwards for every projectile shot.",
   "enchantment.magicky.removed" : "Unusable Enchantment",
   "enchantment.magicky.removed.desc" : "How did you even get this? lol",
 
