@@ -1,0 +1,17 @@
+{
+  "values": [
+    "minecraft:gold_helmet",
+    "minecraft:gold_chestplate",
+    "minecraft:gold_leggings",
+    "minecraft:gold_boots",
+    "minecraft:gold_shovel",
+    "minecraft:gold_pickaxe",
+    "minecraft:gold_axe",
+    "minecraft:gold_hoe",
+    "minecraft:gold_sword",
+    {
+      "id": "farmersdelight:gold_knife",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "values": [
+    "minecraft:iron_helmet",
+    "minecraft:iron_chestplate",
+    "minecraft:iron_leggings",
+    "minecraft:iron_boots",
+    "minecraft:iron_shovel",
+    "minecraft:iron_pickaxe",
+    "minecraft:iron_axe",
+    "minecraft:iron_hoe",
+    "minecraft:iron_sword",
+    "minecraft:crossbow",
+    "minecraft:shield",
+    "minecraft:shears",
+    {
+      "id": "farmersdelight:iron_knife",
+      "required": false
+    },
+    {
+      "id": "farmersdelight:skillet",
+      "required": false
+    }
+  ]
+}

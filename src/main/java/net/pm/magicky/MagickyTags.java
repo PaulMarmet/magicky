@@ -9,6 +9,9 @@ import net.minecraft.util.Identifier;
 public class MagickyTags {
     public static final TagKey<Item> LUCKY = TagKey.of(RegistryKeys.ITEM, Identifier.of(Magicky.MOD_ID, "lucky"));
     public static final TagKey<Enchantment> LUCK_AFFECTED = TagKey.of(RegistryKeys.ENCHANTMENT, Identifier.of(Magicky.MOD_ID, "luck_affected"));
+    public static final TagKey<Enchantment> MENDS = TagKey.of(RegistryKeys.ENCHANTMENT, Identifier.of(Magicky.MOD_ID, "mends"));
+
+    public static final TagKey<Item> MENDING_AGENT = TagKey.of(RegistryKeys.ITEM, Identifier.of(Magicky.MOD_ID, "mending_agent"));
 
     public static void registerTags() {
 

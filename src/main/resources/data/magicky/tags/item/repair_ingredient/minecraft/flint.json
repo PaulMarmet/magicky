@@ -1,0 +1,9 @@
+{
+  "values": [
+    "minecraft:flint_and_steel",
+    {
+      "id": "farmersdelight:flint_knife",
+      "required": false
+    }
+  ]
+}

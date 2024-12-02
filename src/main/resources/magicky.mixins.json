@@ -5,6 +5,7 @@
   "mixins": [
     "AnvilBlockMixin",
     "EnchantmentHelperMixin",
+    "ItemMixin",
     "NameTagItemMixin",
     "PlayerMixin",
     "ProjectileEntityMixin",
