@@ -17,6 +17,7 @@ import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.screen.*;
 import net.minecraft.screen.slot.ForgingSlotsManager;
 import net.minecraft.world.WorldEvents;
+import net.pm.magicky.MagickyTags;
 
 public class AnvilScreenHandlerM extends ForgingScreenHandler {
 //    public static final int INPUT_1_ID = 0;
@@ -129,8 +130,9 @@ public class AnvilScreenHandlerM extends ForgingScreenHandler {
 
                     //if repair material is present, use one to fully repair item
                     if (0 < itemStack3.getCount()) {
-                        //1 lvl per 20% damage fixed
-                        i += (int) Math.max(1, Math.ceil(((float) itemStack2.getDamage() / itemStack2.getMaxDamage()) * 5));
+                        //1 lvl per 20% damage fixed or 1 lvl if mending is present but not used
+                        if (!EnchantmentHelper.hasAnyEnchantmentsIn(itemStack2, MagickyTags.MENDS) || itemStack3.isIn(MagickyTags.MENDING_AGENT)) i += (int) Math.max(1, Math.ceil(((float) itemStack2.getDamage() / itemStack2.getMaxDamage()) * 5));
+                        else i ++;
                         itemStack2.setDamage(0);
                         this.repairItemUsage = 1;
                         //add one level
@@ -150,8 +152,8 @@ public class AnvilScreenHandlerM extends ForgingScreenHandler {
                         int kx = itemStack.getMaxDamage() - itemStack.getDamage();
                         //input 2 durability
                         int m = itemStack3.getMaxDamage() - itemStack3.getDamage();
-                        //add input 2 durability + 10% of max to input 1 durability
-                        int n = m + itemStack2.getMaxDamage() * 10 / 100;
+                        //add input 2 durability + 25% of max to input 1 durability
+                        int n = m + itemStack2.getMaxDamage() * 25 / 100;
                         int o = kx + n;
                         //convert back to damage and prevent over max durability
                         int p = itemStack2.getMaxDamage() - o;
