@@ -10,7 +10,7 @@ public class ToolMaterialsMixin {
     private static int alterGoldDurability(int value) {
         return 200;
     }
-    @ModifyConstant(method = "<clinit>", slice = @Slice(from = @At(value = "CONSTANT", args = "stringValue=GOLD")), constant = @Constant(ordinal = 3))
+    @ModifyConstant(method = "<clinit>", slice = @Slice(from = @At(value = "CONSTANT", args = "stringValue=GOLD")), constant = @Constant(ordinal = 1))
     private static float alterGoldDamage(float value) {
         return 1.5f;
     }
