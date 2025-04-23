@@ -22,5 +22,6 @@
   "tag.item.magicky.lucky" : "Lucky",
 
   "gui.magicky.anvil.title" : "Repair",
-  "gui.magicky.name_tag.title": "Rename Name Tag"
+  "gui.magicky.name_tag.title": "Rename Name Tag",
+  "gui.magicky.enchanting_table.title" : "Enchant"
 }
