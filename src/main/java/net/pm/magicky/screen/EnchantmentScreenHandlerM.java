@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChiseledBookshelfBlock;
 import net.minecraft.block.EnchantingTableBlock;
 import net.minecraft.block.entity.ChiseledBookshelfBlockEntity;
-import net.minecraft.component.ComponentType;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.enchantment.Enchantment;
@@ -26,7 +26,6 @@ import net.minecraft.item.Items;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.registry.tag.EnchantmentTags;
 import net.minecraft.screen.*;
 import net.minecraft.screen.slot.Slot;
@@ -38,18 +37,21 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.collection.IndexedIterable;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.world.World;
 import net.pm.magicky.Magicky;
+import net.pm.magicky.datagen.MagickyItemTags;
 
 public class EnchantmentScreenHandlerM extends ScreenHandler {
     static final Identifier EMPTY_LAPIS_SLOT_TEXTURE = Identifier.ofVanilla("item/empty_slot_lapis_lazulii");
     private final Inventory inventory;
     private final ScreenHandlerContext context;
-    private final Random random;
-    private final Property seed;
-    public final int[] enchantmentPower;
-    public final int[] enchantmentId;
-    public final int[] enchantmentLevel;
+    //private final Random random;
+    //private final Property seed;
+    private final Property maxPower;
+    private final List<EnchantmentLevelEntry> enchantments;
+    public static final int MAX_ENCHANTMENTS_SIZE = 64;
+    public final ArrayPropertyDelegate enchantmentIds;
+    public final ArrayPropertyDelegate enchantmentLevels;
 
     public EnchantmentScreenHandlerM(int syncId, PlayerInventory playerInventory) {
         this(syncId, playerInventory, ScreenHandlerContext.EMPTY);
@@ -63,12 +65,18 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
                 EnchantmentScreenHandlerM.this.onContentChanged(this);
             }
         };
-        this.random = Random.create();
-        this.seed = Property.create();
-        this.enchantmentPower = new int[3];
-        this.enchantmentId = new int[]{-1, -1, -1};
-        this.enchantmentLevel = new int[]{-1, -1, -1};
+        //this.random = Random.create();
+        //this.seed = Property.create();
+        this.maxPower = Property.create();
+        this.enchantments = new ArrayList<>();
         this.context = context;
+        //this needs a size...
+        this.enchantmentIds = new ArrayPropertyDelegate(MAX_ENCHANTMENTS_SIZE);
+        this.enchantmentLevels = new ArrayPropertyDelegate(MAX_ENCHANTMENTS_SIZE);
+        for (int i = 0; i < MAX_ENCHANTMENTS_SIZE; i++) {
+            this.enchantmentIds.set(i, -1);
+            this.enchantmentLevels.set(i, -1);
+        }
         //Primary Slot
         this.addSlot(new Slot(this.inventory, 0, 15, 47) {
             public int getMaxItemCount() {
@@ -78,7 +86,7 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
         //Secondary Slot
         this.addSlot(new Slot(this.inventory, 1, 35, 47) {
             public boolean canInsert(ItemStack stack) {
-                return stack.isOf(Items.LAPIS_LAZULI);
+                return stack.isIn(MagickyItemTags.ENCHANTING_CATALYST) || stack.hasEnchantments();
             }
 
             public Pair<Identifier, Identifier> getBackgroundSprite() {
@@ -99,153 +107,202 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
             this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
         }
 
-        this.addProperty(Property.create(this.enchantmentPower, 0));
-        this.addProperty(Property.create(this.enchantmentPower, 1));
-        this.addProperty(Property.create(this.enchantmentPower, 2));
-        this.addProperty(this.seed).set(playerInventory.player.getEnchantmentTableSeed());
-        this.addProperty(Property.create(this.enchantmentId, 0));
-        this.addProperty(Property.create(this.enchantmentId, 1));
-        this.addProperty(Property.create(this.enchantmentId, 2));
-        this.addProperty(Property.create(this.enchantmentLevel, 0));
-        this.addProperty(Property.create(this.enchantmentLevel, 1));
-        this.addProperty(Property.create(this.enchantmentLevel, 2));
+        //this.addProperty(this.seed).set(playerInventory.player.getEnchantmentTableSeed());
+        this.addProperties(enchantmentIds);
+        this.addProperties(enchantmentLevels);
     }
 
     public void onContentChanged(Inventory inventory) {
         if (inventory == this.inventory) {
+            this.enchantments.clear();
+
             ItemStack itemStack = inventory.getStack(0);
+            ItemStack catStack = inventory.getStack(1);
             /*if the item is enchantable, not if the itemStack is enchantable
               this makes it so that an item with enchants can still be enchanted*/
-            if (!itemStack.isEmpty() && itemStack.getItem().isEnchantable(itemStack)) {
+            if (!itemStack.isEmpty() && itemStack.getItem().isEnchantable(itemStack) && !catStack.isEmpty()) {
                 this.context.run((world, pos) -> {
                     //get the table's enchant power
                     IndexedIterable<RegistryEntry<Enchantment>> indexedIterable = world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getIndexedEntries();
-                    int enchantPower = 0;
 
-                    for (BlockPos blockPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
-                        if (EnchantingTableBlock.canAccessPowerProvider(world, pos, blockPos)) {
-                            ++enchantPower;
-                        }
-                    }
-                    Magicky.LOGGER.info("Power:"+enchantPower);
+                    this.maxPower.set(getMagicPower(world, pos));
 
-                    //get enchants in chiseledBookshelves
-                    List<EnchantmentLevelEntry> enchantList = new ArrayList<>();
-                    //TODO: check that bookshelf has line of sight
-                    //foreach position
-                    for (BlockPos offsetPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
-                        BlockPos blockPos = pos.add(offsetPos);
-                        //if it's a chiseled bookshelf
-                        if (world.getBlockState(blockPos).getBlock() instanceof ChiseledBookshelfBlock && world.getBlockEntity(blockPos) instanceof ChiseledBookshelfBlockEntity blockEntity) {
-                            //all the slots
-                            for (int i = 0; i < blockEntity.size(); i++) {
-                                //for all the enchantments (if any are present)
-                                for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getEnchantments().getEnchantments()) {
-                                    EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getEnchantments().getLevel(enchantment));
-                                    //add only new ones
-                                    if (!enchantList.contains(entry)) enchantList.add(entry);
-                                }
-                                //same with stored enchantements
-                                for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getEnchantments()) {
-                                    EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getLevel(enchantment));
-                                    //add only new ones
-                                    if (!enchantList.contains(entry)) enchantList.add(entry);
-                                }
-                            }
-                        }
+                    //get all possible enchantments based off of catalyst
+                    List<EnchantmentLevelEntry> enchantList;
+                    if(catStack.hasEnchantments()) {
+                        enchantList = getEnchantmentsOn(catStack);
+                    } else if(catStack.isIn(MagickyItemTags.INSCRIBING_CATALYST) || catStack.isIn(MagickyItemTags.CLONING_CATALYST)) {
+                        enchantList = getBookshelfEnchantments(world, pos);
+                    } else {
+                        return;
                     }
                     //trim to possible enchants only
-                    enchantList = enchantList.stream().filter((enchantment) -> {
-                        //item supports the enchantment
-                        if (!enchantment.enchantment.value().isSupportedItem(itemStack)) return false;
-                        //next lowest level
-                        if (EnchantmentHelper.getLevel(enchantment.enchantment, itemStack)+1 != enchantment.level) return false;
-                        //no conflicting enchantments
-                        for (RegistryEntry<Enchantment> itemEnchant : itemStack.getEnchantments().getEnchantments()) if (!Enchantment.canBeCombined(itemEnchant, enchantment.enchantment) && itemEnchant != enchantment.enchantment) return false;
-
-                        return true;
-                    }).toList();
-
+                    enchantList = getPossibleEnchantments(enchantList, itemStack);
                     StringBuilder names = new StringBuilder();
                     for (EnchantmentLevelEntry enchant : enchantList) names.append(enchant.enchantment.value()).append(" ").append(enchant.level).append(", ");
-                    Magicky.LOGGER.info("Enchants:"+names);
+                    Magicky.LOGGER.info(" Enchants:"+names);
+
+                    this.enchantments.addAll(enchantList);
 
                     //get the random enchantments w/ random costs
-                    this.random.setSeed((long)this.seed.get());
+                    //this.random.setSeed((long)this.seed.get());
 
-                    int j;
-                    for(j = 0; j < 3; ++j) {
-                        this.enchantmentPower[j] = EnchantmentHelper.calculateRequiredExperienceLevel(this.random, j, enchantPower, itemStack);
-                        this.enchantmentId[j] = -1;
-                        this.enchantmentLevel[j] = -1;
-                        if (this.enchantmentPower[j] < j + 1) {
-                            this.enchantmentPower[j] = 0;
+                    //enchant slots initialization
+//                    int i;
+//                    for(i = 0; i < 3; ++i) {
+//                        this.enchantmentPower[i] = EnchantmentHelper.calculateRequiredExperienceLevel(this.random, i, maxPower, itemStack);
+//                        this.enchantmentId[i] = -1;
+//                        this.enchantmentLevel[i] = -1;
+//                        if (this.enchantmentPower[i] < i + 1) {
+//                            this.enchantmentPower[i] = 0;
+//                        }
+//                    }
+                    EnchantmentLevelEntry enchantment;
+                    for (int i = 0; i < MAX_ENCHANTMENTS_SIZE; i++) {
+                        enchantment = null;
+                        if (i < this.enchantments.size()) enchantment = this.enchantments.get(i);
+                        if (enchantment != null) {
+                            this.enchantmentIds.set(i, indexedIterable.getRawId(enchantment.enchantment));
+                            this.enchantmentLevels.set(i, enchantment.level);
+                        } else {
+                            this.enchantmentIds.set(i, -1);
+                            this.enchantmentLevels.set(i, -1);
                         }
                     }
-
-                    for(j = 0; j < 3; ++j) {
-                        if (this.enchantmentPower[j] > 0) {
-                            List<EnchantmentLevelEntry> list = this.generateEnchantments(world.getRegistryManager(), itemStack, j, this.enchantmentPower[j]);
-                            if (list != null && !list.isEmpty()) {
-                                EnchantmentLevelEntry enchantmentLevelEntry = (EnchantmentLevelEntry)list.get(this.random.nextInt(list.size()));
-                                this.enchantmentId[j] = indexedIterable.getRawId(enchantmentLevelEntry.enchantment);
-                                this.enchantmentLevel[j] = enchantmentLevelEntry.level;
-                            }
-                        }
-                    }
-
+                    Magicky.LOGGER.info("Total:"+this.getEnchantmentCount());
                     this.sendContentUpdates();
                 });
-            } else {
-                for(int i = 0; i < 3; ++i) {
-                    this.enchantmentPower[i] = 0;
-                    this.enchantmentId[i] = -1;
-                    this.enchantmentLevel[i] = -1;
-                }
             }
         }
 
     }
 
+    public int getMagicPower(World world, BlockPos pos) {
+        int magicPower = 0;
+
+        for (BlockPos blockPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
+            if (EnchantingTableBlock.canAccessPowerProvider(world, pos, blockPos)) {
+                ++magicPower;
+            }
+        }
+        return magicPower;
+    }
+
+    public int getEnchantmentPower(World world, int index) {
+        return (this.enchantmentLevels.get(index) > -1) ? ((this.enchantmentLevels.get(index) * (world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(this.enchantmentIds.get(index)).get().isIn(EnchantmentTags.TREASURE) ? 4 : 1))*2) - 1 : 0; //maybe remove the *2 -1?
+    }
+
+    public List<EnchantmentLevelEntry> getBookshelfEnchantments(World world, BlockPos pos) {
+        List<EnchantmentLevelEntry> availableList = new ArrayList<>();
+        //TODO: check that bookshelf has line of sight
+        //foreach position
+        for (BlockPos offsetPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
+            BlockPos blockPos = pos.add(offsetPos);
+            //if it's a chiseled bookshelf
+            if (world.getBlockState(blockPos).getBlock() instanceof ChiseledBookshelfBlock && world.getBlockEntity(blockPos) instanceof ChiseledBookshelfBlockEntity blockEntity) {
+                //all the slots
+                for (int i = 0; i < blockEntity.size(); i++) {
+                    //for all the enchantments (if any are present)
+                    for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getEnchantments().getEnchantments()) {
+                        EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getEnchantments().getLevel(enchantment));
+                        //add only new ones
+                        if (!availableList.contains(entry)) availableList.add(entry);
+                    }
+                    //same with stored enchantements
+                    for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getEnchantments()) {
+                        EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getLevel(enchantment));
+                        //add only new ones
+                        if (!availableList.contains(entry)) availableList.add(entry);
+                    }
+                }
+            }
+        }
+        return availableList;
+    }
+
+    public List<EnchantmentLevelEntry> getEnchantmentsOn (ItemStack itemStack) {
+        List<EnchantmentLevelEntry> enchantments = new ArrayList<>();
+        //for all the enchantments (if any are present)
+        for (RegistryEntry<Enchantment> enchantment : itemStack.getEnchantments().getEnchantments()) {
+            EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, itemStack.getEnchantments().getLevel(enchantment));
+            //add only new ones
+            if (!enchantments.contains(entry)) enchantments.add(entry);
+        }
+        return enchantments;
+    }
+
+    public List<EnchantmentLevelEntry> getPossibleEnchantments(List<EnchantmentLevelEntry> available, ItemStack itemStack) {
+        return available.stream().filter((enchantment) -> {
+            //item supports the enchantment
+            if (!enchantment.enchantment.value().isSupportedItem(itemStack)) return false;
+            //next lowest level
+            if (EnchantmentHelper.getLevel(enchantment.enchantment, itemStack)+1 != enchantment.level) return false;
+            //no conflicting enchantments
+            for (RegistryEntry<Enchantment> itemEnchant : itemStack.getEnchantments().getEnchantments()) if (!Enchantment.canBeCombined(itemEnchant, enchantment.enchantment) && itemEnchant != enchantment.enchantment) return false;
+
+            return true;
+        }).toList();
+    }
+
+    public int getEnchantmentCount() {
+        for (int i = 0; i < MAX_ENCHANTMENTS_SIZE; i++) {
+            if (this.enchantmentIds.get(i) <= -1) return i;
+        }
+        return MAX_ENCHANTMENTS_SIZE;
+    }
+
+    public EnchantmentLevelEntry getEnchantment(World world, int index) {
+        if (index > this.getEnchantmentCount()) return null;
+        Optional<RegistryEntry.Reference<Enchantment>> enchantment = world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(this.enchantmentIds.get(index));
+        return enchantment.map(enchantmentReference -> new EnchantmentLevelEntry(enchantmentReference, this.enchantmentLevels.get(index))).orElse(null);
+    }
+
     public boolean onButtonClick(PlayerEntity player, int id) {
-        if (id >= 0 && id < this.enchantmentPower.length) {
+        //if valid id in list
+        if (id >= 0 && id < this.enchantments.size()) {
+            //get stacks
             ItemStack itemStack = this.inventory.getStack(0);
-            ItemStack itemStack2 = this.inventory.getStack(1);
-            int i = id + 1;
-            if ((itemStack2.isEmpty() || itemStack2.getCount() < i) && !player.isInCreativeMode()) {
+            ItemStack catStack = this.inventory.getStack(1);
+            //catalyst cost (double if treasure enchantment)
+            int catCost = (this.enchantments.get(id).level) * (this.enchantments.get(id).enchantment.isIn(EnchantmentTags.TREASURE) ? 2 : 1);
+            //if not enough catalyst
+            if ((catStack.isEmpty() || catStack.getCount() < catCost) && !player.isInCreativeMode()) {
                 return false;
-            } else if (this.enchantmentPower[id] <= 0 || itemStack.isEmpty() || (player.experienceLevel < i || player.experienceLevel < this.enchantmentPower[id]) && !player.getAbilities().creativeMode) {
+            }
+            //if not enough xp or invalid item/enchantment
+            else if (this.enchantments.get(id).level <= 0 || itemStack.isEmpty() || (player.experienceLevel < catCost || player.experienceLevel < this.enchantments.get(id).level) && !player.getAbilities().creativeMode) {
                 return false;
             } else {
                 this.context.run((world, pos) -> {
-                    ItemStack itemStack3 = itemStack;
-                    List<EnchantmentLevelEntry> list = this.generateEnchantments(world.getRegistryManager(), itemStack3, id, this.enchantmentPower[id]);
+                    //new itemStack
+                    ItemStack newStack = itemStack;
+                    List<EnchantmentLevelEntry> list = this.generateEnchantments(world.getRegistryManager(), newStack, id, this.enchantments.get(id).level);
                     if (!list.isEmpty()) {
-                        player.applyEnchantmentCosts(itemStack3, i);
-                        if (itemStack3.isOf(Items.BOOK)) {
-                            itemStack3 = itemStack.withItem(Items.ENCHANTED_BOOK);
-                            this.inventory.setStack(0, itemStack3);
+                        player.applyEnchantmentCosts(newStack, catCost);
+                        if (newStack.isOf(Items.BOOK)) {
+                            newStack = itemStack.withItem(Items.ENCHANTED_BOOK);
+                            this.inventory.setStack(0, newStack);
                         }
 
                         Iterator var10 = list.iterator();
 
                         while(var10.hasNext()) {
                             EnchantmentLevelEntry enchantmentLevelEntry = (EnchantmentLevelEntry)var10.next();
-                            itemStack3.addEnchantment(enchantmentLevelEntry.enchantment, enchantmentLevelEntry.level);
+                            newStack.addEnchantment(enchantmentLevelEntry.enchantment, enchantmentLevelEntry.level);
                         }
 
-                        itemStack2.decrementUnlessCreative(i, player);
-                        if (itemStack2.isEmpty()) {
+                        catStack.decrementUnlessCreative(catCost, player);
+                        if (catStack.isEmpty()) {
                             this.inventory.setStack(1, ItemStack.EMPTY);
                         }
 
                         player.incrementStat(Stats.ENCHANT_ITEM);
                         if (player instanceof ServerPlayerEntity) {
-                            Criteria.ENCHANTED_ITEM.trigger((ServerPlayerEntity)player, itemStack3, i);
+                            Criteria.ENCHANTED_ITEM.trigger((ServerPlayerEntity)player, newStack, catCost);
                         }
 
                         this.inventory.markDirty();
-                        this.seed.set(player.getEnchantmentTableSeed());
+                        //this.seed.set(player.getEnchantmentTableSeed());
                         this.onContentChanged(this.inventory);
                         world.playSound((PlayerEntity)null, pos, SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.BLOCKS, 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
                     }
@@ -261,27 +318,28 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
     }
 
     private List<EnchantmentLevelEntry> generateEnchantments(DynamicRegistryManager registryManager, ItemStack stack, int slot, int level) {
-        this.random.setSeed((long)(this.seed.get() + slot));
-        Optional<RegistryEntryList.Named<Enchantment>> optional = registryManager.get(RegistryKeys.ENCHANTMENT).getEntryList(EnchantmentTags.IN_ENCHANTING_TABLE);
-        if (optional.isEmpty()) {
-            return List.of();
-        } else {
-            List<EnchantmentLevelEntry> list = EnchantmentHelper.generateEnchantments(this.random, stack, level, ((RegistryEntryList.Named)optional.get()).stream());
-            if (stack.isOf(Items.BOOK) && list.size() > 1) {
-                list.remove(this.random.nextInt(list.size()));
-            }
-
-            return list;
-        }
+//        this.random.setSeed((long)(this.seed.get() + slot));
+//        Optional<RegistryEntryList.Named<Enchantment>> optional = registryManager.get(RegistryKeys.ENCHANTMENT).getEntryList(EnchantmentTags.IN_ENCHANTING_TABLE);
+//        if (optional.isEmpty()) {
+//            return List.of();
+//        } else {
+//            List<EnchantmentLevelEntry> list = EnchantmentHelper.generateEnchantments(this.random, stack, level, ((RegistryEntryList.Named)optional.get()).stream());
+//            if (stack.isOf(Items.BOOK) && list.size() > 1) {
+//                list.remove(this.random.nextInt(list.size()));
+//            }
+//
+//            return list;
+//        }
+        return List.of(this.enchantments.get(slot));
     }
 
-    public int getLapisCount() {
+    public int getCatalystCount() {
         ItemStack itemStack = this.inventory.getStack(1);
         return itemStack.isEmpty() ? 0 : itemStack.getCount();
     }
 
     public int getSeed() {
-        return this.seed.get();
+        return 0;//this.seed.get();
     }
 
     public void onClosed(PlayerEntity player) {
@@ -309,7 +367,7 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
                 if (!this.insertItem(itemStack2, 2, 38, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (itemStack2.isOf(Items.LAPIS_LAZULI)) {
+            } else if (itemStack2.isIn(MagickyItemTags.ENCHANTING_CATALYST)) {
                 if (!this.insertItem(itemStack2, 1, 2, true)) {
                     return ItemStack.EMPTY;
                 }

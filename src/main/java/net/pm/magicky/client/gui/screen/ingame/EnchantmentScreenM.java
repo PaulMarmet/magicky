@@ -13,13 +13,13 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.entity.model.BookModel;
 import net.minecraft.client.render.entity.model.EntityModelLayers;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentLevelEntry;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.StringVisitable;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -30,15 +30,16 @@ import net.pm.magicky.Magicky;
 import net.pm.magicky.screen.EnchantmentScreenHandlerM;
 
 import java.util.List;
-import java.util.Optional;
 
 @Environment(EnvType.CLIENT)
 public class EnchantmentScreenM extends HandledScreen<EnchantmentScreenHandlerM> {
-    private static final Identifier[] LEVEL_TEXTURES = new Identifier[]{Identifier.ofVanilla("container/enchanting_table/level_1"), Identifier.ofVanilla("container/enchanting_table/level_2"), Identifier.ofVanilla("container/enchanting_table/level_3")};
-    private static final Identifier[] LEVEL_DISABLED_TEXTURES = new Identifier[]{Identifier.ofVanilla("container/enchanting_table/level_1_disabled"), Identifier.ofVanilla("container/enchanting_table/level_2_disabled"), Identifier.ofVanilla("container/enchanting_table/level_3_disabled")};
-    private static final Identifier ENCHANTMENT_SLOT_DISABLED_TEXTURE = Identifier.ofVanilla("container/enchanting_table/enchantment_slot_disabled");
-    private static final Identifier ENCHANTMENT_SLOT_HIGHLIGHTED_TEXTURE = Identifier.ofVanilla("container/enchanting_table/enchantment_slot_highlighted");
-    private static final Identifier ENCHANTMENT_SLOT_TEXTURE = Identifier.ofVanilla("container/enchanting_table/enchantment_slot");
+//    private static final Identifier[] LEVEL_TEXTURES = new Identifier[]{Identifier.ofVanilla("container/enchanting_table/level_1"), Identifier.ofVanilla("container/enchanting_table/level_2"), Identifier.ofVanilla("container/enchanting_table/level_3")};
+//    private static final Identifier[] LEVEL_DISABLED_TEXTURES = new Identifier[]{Identifier.ofVanilla("container/enchanting_table/level_1_disabled"), Identifier.ofVanilla("container/enchanting_table/level_2_disabled"), Identifier.ofVanilla("container/enchanting_table/level_3_disabled")};
+private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID, "container/enchanting_table/scroller");
+    private static final Identifier SCROLLER_DISABLED_TEXTURE = Identifier.of(Magicky.MOD_ID, "container/enchanting_table/scroller_disabled");
+    private static final Identifier ENCHANTMENT_SLOT_TEXTURE = Identifier.of(Magicky.MOD_ID, "container/enchanting_table/enchantment_slot");
+    private static final Identifier ENCHANTMENT_SLOT_DISABLED_TEXTURE = Identifier.of(Magicky.MOD_ID, "container/enchanting_table/enchantment_slot_disabled");
+    private static final Identifier ENCHANTMENT_SLOT_HIGHLIGHTED_TEXTURE = Identifier.of(Magicky.MOD_ID, "container/enchanting_table/enchantment_slot_highlighted");
     private static final Identifier TEXTURE = Identifier.of(Magicky.MOD_ID, "textures/gui/container/enchanting_table.png");
     private static final Identifier BOOK_TEXTURE = Identifier.ofVanilla("textures/entity/enchanting_table_book.png");
     private final Random random = Random.create();
@@ -51,6 +52,18 @@ public class EnchantmentScreenM extends HandledScreen<EnchantmentScreenHandlerM>
     public float nextPageTurningSpeed;
     public float pageTurningSpeed;
     private ItemStack stack;
+    private static final int OFFSET_Y = 14;
+    private static final int HEIGHT = 57;
+    private static final int SLOT_HEIGHT = 11;
+    private static final int FIELD_OFFSET_X = 60;
+    private static final int FIELD_WIDTH = 93;
+    private static final int TEXT_BUFFER = 2;
+    private static final int SCROLLBAR_OFFSET_X = 156;
+    private static final int SCROLLBAR_WIDTH = 12;
+    private static final int SCROLLBAR_HEIGHT = 15;
+    private float scrollAmount;
+    private int scrollOffset;
+    private boolean mouseClicked;
 
     public EnchantmentScreenM(EnchantmentScreenHandlerM handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -68,67 +81,137 @@ public class EnchantmentScreenM extends HandledScreen<EnchantmentScreenHandlerM>
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int i = (this.width - this.backgroundWidth) / 2;
-        int j = (this.height - this.backgroundHeight) / 2;
+        this.mouseClicked = false;
+        int localX = (this.width - this.backgroundWidth) / 2;
+        int localY = (this.height - this.backgroundHeight) / 2;
 
-        for(int k = 0; k < 3; ++k) {
-            double d = mouseX - (double)(i + 60);
-            double e = mouseY - (double)(j + 14 + 19 * k);
-            if (d >= 0.0 && e >= 0.0 && d < 108.0 && e < 19.0 && ((EnchantmentScreenHandlerM)this.handler).onButtonClick(this.client.player, k)) {
-                this.client.interactionManager.clickButton(((EnchantmentScreenHandlerM)this.handler).syncId, k);
+        for(int k = 0; k < this.handler.getEnchantmentCount() && k < (HEIGHT / SLOT_HEIGHT); ++k) {
+            int slotOffset = SLOT_HEIGHT * k;
+            double horizontalBounds = mouseX - (double)(localX + FIELD_OFFSET_X);
+            double verticalBounds = mouseY - (double)(localY + OFFSET_Y + slotOffset);
+            if (horizontalBounds >= 0.0 && verticalBounds >= 0.0 && horizontalBounds < FIELD_WIDTH && verticalBounds < SLOT_HEIGHT && this.handler.onButtonClick(this.client.player, k + this.scrollOffset)) {
+                this.client.interactionManager.clickButton(this.handler.syncId, k + this.scrollOffset);
+                Magicky.LOGGER.info("clicked"+(k + this.scrollOffset));
                 return true;
             }
+        }
+        if (this.inScrollArea(mouseX, mouseY)) {
+            this.mouseClicked = true;
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        int i = (this.width - this.backgroundWidth) / 2;
-        int j = (this.height - this.backgroundHeight) / 2;
-        context.drawTexture(TEXTURE, i, j, 0, 0, this.backgroundWidth, this.backgroundHeight);
-        this.drawBook(context, i, j, delta);
-        EnchantingPhrases.getInstance().setSeed((long)((EnchantmentScreenHandlerM)this.handler).getSeed());
-        int k = ((EnchantmentScreenHandlerM)this.handler).getLapisCount();
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (this.mouseClicked && this.getMaxScroll() > 0 && this.inScrollArea(mouseX, mouseY)) {
+            int i = this.y + OFFSET_Y;
+            int j = i + HEIGHT;
+            this.scrollAmount = ((float)mouseY - (float)i - 7.5F) / ((float)(j - i) - 15.0F);
+            this.scrollAmount = MathHelper.clamp(this.scrollAmount, 0.0F, 1.0F);
+            this.scrollOffset = (int)((double)(this.scrollAmount * (float)this.getMaxScroll()) + 0.5) * 4;
+            return true;
+        } else {
+            return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        }
+    }
 
-        for(int l = 0; l < 3; ++l) {
-            int m = i + 60;
-            int n = m + 20;
-            int o = ((EnchantmentScreenHandlerM)this.handler).enchantmentPower[l];
-            if (o == 0) {
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (this.getMaxScroll() > 0 && this.inEnchantmentArea(mouseX, mouseY)) {
+            int maxScroll = this.getMaxScroll();
+            float scrollFraction = (float)verticalAmount / (float)maxScroll;
+            this.scrollAmount = MathHelper.clamp(this.scrollAmount - scrollFraction, 0.0F, 1.0F);
+            this.scrollOffset = (int)((double)(this.scrollAmount * (float)maxScroll) + 0.5) * 4;
+        }
+
+        return true;
+    }
+
+    public int getMaxScroll() {
+        int displayable = HEIGHT / SLOT_HEIGHT;
+        int total = this.handler.getEnchantmentCount();
+        return displayable >= total ? 0 : total - displayable;
+    }
+
+    public int firstShown() {
+        return (int) this.scrollAmount * this.getMaxScroll();
+    }
+
+    public boolean inEnchantmentArea(double mouseX, double mouseY) {
+        int localX = (this.width - this.backgroundWidth) / 2;
+        int localY = (this.height - this.backgroundHeight) / 2;
+
+        return (mouseX >= localX + FIELD_OFFSET_X - 1
+                && mouseX <= localX + SCROLLBAR_OFFSET_X + SCROLLBAR_WIDTH + 1
+                && mouseY >= localY + OFFSET_Y - 1
+                && mouseY <= localY + OFFSET_Y + HEIGHT + 1);
+    }
+    public boolean inScrollArea(double mouseX, double mouseY) {
+        int localX = (this.width - this.backgroundWidth) / 2;
+        int localY = (this.height - this.backgroundHeight) / 2;
+
+        return (mouseX >= localX + SCROLLBAR_OFFSET_X - 1
+                && mouseX <= localX + SCROLLBAR_OFFSET_X + SCROLLBAR_WIDTH + 1
+                && mouseY >= localY + OFFSET_Y - 1
+                && mouseY <= localY + OFFSET_Y + HEIGHT + 1);
+    }
+
+    protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
+        int zeroX = (this.width - this.backgroundWidth) / 2;
+        int zeroY = (this.height - this.backgroundHeight) / 2;
+
+        context.drawTexture(TEXTURE, zeroX, zeroY, 0, 0, this.backgroundWidth, this.backgroundHeight);
+        this.drawBook(context, zeroX, zeroY, delta);
+        EnchantingPhrases.getInstance().setSeed((long)this.handler.getSeed());
+
+        int skroll = (int)((HEIGHT - SCROLLBAR_HEIGHT) * this.scrollAmount);
+        Identifier scroller = this.getMaxScroll() > 0 ? SCROLLER_TEXTURE : SCROLLER_DISABLED_TEXTURE;
+        context.drawGuiTexture(scroller, zeroX + SCROLLBAR_OFFSET_X,  zeroY + OFFSET_Y + skroll, SCROLLBAR_WIDTH, SCROLLBAR_HEIGHT);
+
+        int catCount = this.handler.getCatalystCount();
+        //Magicky.LOGGER.info("has: "+this.handler.getEnchantmentCount());
+
+        for(int i = 0; i < (HEIGHT / SLOT_HEIGHT); ++i) {
+            int slot = this.firstShown() + i;
+            EnchantmentLevelEntry enchantment = this.handler.getEnchantment(this.client.world, slot);
+            //make good power calc
+            int power = this.handler.getEnchantmentPower(this.client.world, slot);
+            //Magicky.LOGGER.info("power:"+power);
+            if (power == 0) {
                 RenderSystem.enableBlend();
-                context.drawGuiTexture(ENCHANTMENT_SLOT_DISABLED_TEXTURE, m, j + 14 + 19 * l, 108, 19);
+                context.drawGuiTexture(ENCHANTMENT_SLOT_DISABLED_TEXTURE, zeroX + FIELD_OFFSET_X, zeroY + OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT);
                 RenderSystem.disableBlend();
             } else {
-                String string = "" + o;
-                int p = 86 - this.textRenderer.getWidth(string);
-                StringVisitable stringVisitable = EnchantingPhrases.getInstance().generatePhrase(this.textRenderer, p);
+                String string = "" + power;
+                int p = FIELD_WIDTH - 7 - this.textRenderer.getWidth(string);
+                StringVisitable stringVisitable = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment.enchantment, enchantment.level).getString()).fillStyle(Style.EMPTY.withFont(Identifier.ofVanilla("alt"))), width, Style.EMPTY);
+                StringVisitable stringClear = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment.enchantment, enchantment.level).getString()), width, Style.EMPTY);//EnchantingPhrases.getInstance().generatePhrase(this.textRenderer, p);
                 int q = 6839882;
-                if ((k < l + 1 || this.client.player.experienceLevel < o) && !this.client.player.getAbilities().creativeMode) {
+                if ((catCount < i + 1 || this.client.player.experienceLevel < power) && !this.client.player.getAbilities().creativeMode) {
                     RenderSystem.enableBlend();
-                    context.drawGuiTexture(ENCHANTMENT_SLOT_DISABLED_TEXTURE, m, j + 14 + 19 * l, 108, 19);
-                    context.drawGuiTexture(LEVEL_DISABLED_TEXTURES[l], m + 1, j + 15 + 19 * l, 16, 16);
+                    context.drawGuiTexture(ENCHANTMENT_SLOT_DISABLED_TEXTURE, zeroX + FIELD_OFFSET_X, zeroY + OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT);
+//                    context.drawGuiTexture(LEVEL_DISABLED_TEXTURES[l], m + 1, j + 15 + 19 * l, 16, 16);
                     RenderSystem.disableBlend();
-                    context.drawTextWrapped(this.textRenderer, stringVisitable, n, j + 16 + 19 * l, p, (q & 16711422) >> 1);
-                    q = 4226832;
+                    context.drawTextWrapped(this.textRenderer, stringVisitable, zeroX + FIELD_OFFSET_X + TEXT_BUFFER, zeroY + OFFSET_Y + TEXT_BUFFER + SLOT_HEIGHT * i, p, (q & 16711422) >> 1);
                 } else {
-                    int r = mouseX - (i + 60);
-                    int s = mouseY - (j + 14 + 19 * l);
+                    int r = mouseX - (zeroX + FIELD_OFFSET_X);
+                    int s = mouseY - (zeroY + OFFSET_Y + SLOT_HEIGHT * i);
                     RenderSystem.enableBlend();
-                    if (r >= 0 && s >= 0 && r < 108 && s < 19) {
-                        context.drawGuiTexture(ENCHANTMENT_SLOT_HIGHLIGHTED_TEXTURE, m, j + 14 + 19 * l, 108, 19);
+                    if (r >= 0 && s >= 0 && r < FIELD_WIDTH && s < SLOT_HEIGHT) {
+                        context.drawGuiTexture(ENCHANTMENT_SLOT_HIGHLIGHTED_TEXTURE, zeroX + FIELD_OFFSET_X, zeroY + OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT);
                         q = 16777088;
                     } else {
-                        context.drawGuiTexture(ENCHANTMENT_SLOT_TEXTURE, m, j + 14 + 19 * l, 108, 19);
+                        context.drawGuiTexture(ENCHANTMENT_SLOT_TEXTURE, zeroX + FIELD_OFFSET_X, zeroY + OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT);
                     }
 
-                    context.drawGuiTexture(LEVEL_TEXTURES[l], m + 1, j + 15 + 19 * l, 16, 16);
+                    //context.drawGuiTexture(LEVEL_TEXTURES[l], m + 1, j + 15 + 19 * l, 16, 16);
                     RenderSystem.disableBlend();
-                    context.drawTextWrapped(this.textRenderer, stringVisitable, n, j + 16 + 19 * l, p, q);
+                    context.drawTextWrapped(this.textRenderer, stringVisitable, zeroX + FIELD_OFFSET_X + TEXT_BUFFER, zeroY + OFFSET_Y + TEXT_BUFFER + SLOT_HEIGHT * i, p, q);
                     q = 8453920;
                 }
 
-                context.drawTextWithShadow(this.textRenderer, string, n + 86 - this.textRenderer.getWidth(string), j + 16 + 19 * l + 7, q);
+                context.drawTextWithShadow(this.textRenderer, string, zeroX + FIELD_OFFSET_X + FIELD_WIDTH - TEXT_BUFFER - this.textRenderer.getWidth(string), zeroY + OFFSET_Y + TEXT_BUFFER + SLOT_HEIGHT * i /*+ 7*/, q);
             }
         }
 
@@ -160,22 +243,24 @@ public class EnchantmentScreenM extends HandledScreen<EnchantmentScreenHandlerM>
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
-        boolean bl = this.client.player.getAbilities().creativeMode;
-        int i = ((EnchantmentScreenHandlerM)this.handler).getLapisCount();
+        boolean creative = this.client.player.getAbilities().creativeMode;
+        int catCount = this.handler.getCatalystCount();
 
-        for(int j = 0; j < 3; ++j) {
-            int k = ((EnchantmentScreenHandlerM)this.handler).enchantmentPower[j];
-            Optional<RegistryEntry.Reference<Enchantment>> optional = this.client.world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(((EnchantmentScreenHandlerM)this.handler).enchantmentId[j]);
-            if (!optional.isEmpty()) {
-                int l = ((EnchantmentScreenHandlerM)this.handler).enchantmentLevel[j];
-                int m = j + 1;
-                if (this.isPointWithinBounds(60, 14 + 19 * j, 108, 17, (double)mouseX, (double)mouseY) && k > 0 && l >= 0 && optional != null) {
+        for(int i = 0; i < (HEIGHT / SLOT_HEIGHT); ++i) {
+            int slot = this.firstShown() + i;
+            int power = this.handler.getEnchantmentPower(this.client.world, slot);
+            //Optional<RegistryEntry.Reference<Enchantment>> optional = this.client.world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(indexedIterable.getRawId(this.handler.enchantments.get(j).enchantment));
+            EnchantmentLevelEntry enchantment = this.handler.getEnchantment(this.client.world, slot);
+            if (enchantment != null) {
+                int level = enchantment.level;
+                int m = slot + 1;
+                if (this.isPointWithinBounds(FIELD_OFFSET_X, OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT, (double)mouseX, (double)mouseY) && power > 0 && level >= 0 /*&& optional != null*/) {
                     List<Text> list = Lists.newArrayList();
-                    list.add(Text.translatable("container.enchant.clue", new Object[]{Enchantment.getName((RegistryEntry)optional.get(), l)}).formatted(Formatting.WHITE));
-                    if (!bl) {
+                    list.add(Text.translatable("container.enchant.clue", new Object[]{Enchantment.getName(enchantment.enchantment, level)}).formatted(Formatting.WHITE));
+                    if (!creative) {
                         list.add(ScreenTexts.EMPTY);
-                        if (this.client.player.experienceLevel < k) {
-                            list.add(Text.translatable("container.enchant.level.requirement", new Object[]{((EnchantmentScreenHandlerM)this.handler).enchantmentPower[j]}).formatted(Formatting.RED));
+                        if (this.client.player.experienceLevel < power) {
+                            list.add(Text.translatable("container.enchant.level.requirement", new Object[]{this.handler.getEnchantmentPower(this.client.world, slot)}).formatted(Formatting.RED));
                         } else {
                             MutableText mutableText;
                             if (m == 1) {
@@ -184,7 +269,7 @@ public class EnchantmentScreenM extends HandledScreen<EnchantmentScreenHandlerM>
                                 mutableText = Text.translatable("container.enchant.lapis.many", new Object[]{m});
                             }
 
-                            list.add(mutableText.formatted(i >= m ? Formatting.GRAY : Formatting.RED));
+                            list.add(mutableText.formatted(catCount >= m ? Formatting.GRAY : Formatting.RED));
                             MutableText mutableText2;
                             if (m == 1) {
                                 mutableText2 = Text.translatable("container.enchant.level.one");
@@ -205,7 +290,7 @@ public class EnchantmentScreenM extends HandledScreen<EnchantmentScreenHandlerM>
     }
 
     public void doTick() {
-        ItemStack itemStack = ((EnchantmentScreenHandlerM)this.handler).getSlot(0).getStack();
+        ItemStack itemStack = this.handler.getSlot(0).getStack();
         if (!ItemStack.areEqual(itemStack, this.stack)) {
             this.stack = itemStack;
 
@@ -214,13 +299,16 @@ public class EnchantmentScreenM extends HandledScreen<EnchantmentScreenHandlerM>
             } while(this.nextPageAngle <= this.approximatePageAngle + 1.0F && this.nextPageAngle >= this.approximatePageAngle - 1.0F);
         }
 
+        //a bit of fun
+        if (this.handler.getSlot(1).hasStack()) this.handler.getSlot(1).onTake(this.ticks);
+
         ++this.ticks;
         this.pageAngle = this.nextPageAngle;
         this.pageTurningSpeed = this.nextPageTurningSpeed;
         boolean bl = false;
 
-        for(int i = 0; i < 3; ++i) {
-            if (((EnchantmentScreenHandlerM)this.handler).enchantmentPower[i] != 0) {
+        for(int i = 0; i < this.handler.getEnchantmentCount(); ++i) {
+            if (this.handler.getEnchantmentPower(this.client.world, i) != 0) {
                 bl = true;
             }
         }

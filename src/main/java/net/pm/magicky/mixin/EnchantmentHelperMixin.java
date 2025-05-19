@@ -4,7 +4,8 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.entry.RegistryEntry;
-import net.pm.magicky.MagickyTags;
+import net.pm.magicky.datagen.MagickyEnchantmentTags;
+import net.pm.magicky.datagen.MagickyItemTags;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,7 +17,7 @@ public class EnchantmentHelperMixin {
     @Inject(method = "getLevel(Lnet/minecraft/registry/entry/RegistryEntry;Lnet/minecraft/item/ItemStack;)I", at = @At(value = "RETURN"), cancellable = true)
     private static void addGoldenFortune(RegistryEntry<Enchantment> enchantment, ItemStack stack, CallbackInfoReturnable<Integer> cir) {
         int currentLevel = cir.getReturnValue();
-        if (stack.isIn(MagickyTags.LUCKY) && enchantment.isIn(MagickyTags.LUCK_AFFECTED)) {
+        if (stack.isIn(MagickyItemTags.LUCKY) && enchantment.isIn(MagickyEnchantmentTags.LUCK_AFFECTED)) {
             cir.setReturnValue(currentLevel + 1);
         }
     }
