@@ -45,8 +45,6 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
     static final Identifier EMPTY_LAPIS_SLOT_TEXTURE = Identifier.ofVanilla("item/empty_slot_lapis_lazulii");
     private final Inventory inventory;
     private final ScreenHandlerContext context;
-    //private final Random random;
-    //private final Property seed;
     private final Property maxPower;
     private final List<EnchantmentLevelEntry> enchantments;
     public static final int MAX_ENCHANTMENTS_SIZE = 64;
@@ -206,13 +204,23 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
                     for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getEnchantments().getEnchantments()) {
                         EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getEnchantments().getLevel(enchantment));
                         //add only new ones
-                        if (!availableList.contains(entry)) availableList.add(entry);
+                        boolean present = false;
+                        for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                            present = true;
+                            break;
+                        }
+                        if (!present) availableList.add(entry);
                     }
                     //same with stored enchantements
                     for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getEnchantments()) {
                         EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getLevel(enchantment));
                         //add only new ones
-                        if (!availableList.contains(entry)) availableList.add(entry);
+                        boolean present = false;
+                        for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                            present = true;
+                            break;
+                        }
+                        if (!present) availableList.add(entry);
                     }
                 }
             }
