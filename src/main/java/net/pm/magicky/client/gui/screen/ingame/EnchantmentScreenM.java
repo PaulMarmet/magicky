@@ -13,9 +13,9 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.entity.model.BookModel;
 import net.minecraft.client.render.entity.model.EntityModelLayers;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentLevelEntry;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.StringVisitable;
@@ -52,8 +52,8 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
     public float nextPageTurningSpeed;
     public float pageTurningSpeed;
     private ItemStack stack;
-    private static final int OFFSET_Y = 14;
-    private static final int HEIGHT = 57;
+    private static final int OFFSET_Y = 15;
+    private static final int HEIGHT = 55;
     private static final int SLOT_HEIGHT = 11;
     private static final int FIELD_OFFSET_X = 60;
     private static final int FIELD_WIDTH = 93;
@@ -91,7 +91,6 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
             double verticalBounds = mouseY - (double)(localY + OFFSET_Y + slotOffset);
             if (horizontalBounds >= 0.0 && verticalBounds >= 0.0 && horizontalBounds < FIELD_WIDTH && verticalBounds < SLOT_HEIGHT && this.handler.onButtonClick(this.client.player, k + this.scrollOffset)) {
                 this.client.interactionManager.clickButton(this.handler.syncId, k + this.scrollOffset);
-                Magicky.LOGGER.info("clicked"+(k + this.scrollOffset));
                 return true;
             }
         }
@@ -135,7 +134,7 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
     }
 
     public int firstShown() {
-        return (int) this.scrollAmount * this.getMaxScroll();
+        return (int) (this.scrollAmount * this.getMaxScroll());
     }
 
     public boolean inEnchantmentArea(double mouseX, double mouseY) {
@@ -163,7 +162,8 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
 
         context.drawTexture(TEXTURE, zeroX, zeroY, 0, 0, this.backgroundWidth, this.backgroundHeight);
         this.drawBook(context, zeroX, zeroY, delta);
-        EnchantingPhrases.getInstance().setSeed((long)this.handler.getSeed());
+        //not really used lol
+        EnchantingPhrases.getInstance().setSeed(0);
 
         int skroll = (int)((HEIGHT - SCROLLBAR_HEIGHT) * this.scrollAmount);
         Identifier scroller = this.getMaxScroll() > 0 ? SCROLLER_TEXTURE : SCROLLER_DISABLED_TEXTURE;
@@ -174,19 +174,19 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
 
         for(int i = 0; i < (HEIGHT / SLOT_HEIGHT); ++i) {
             int slot = this.firstShown() + i;
-            EnchantmentLevelEntry enchantment = this.handler.getEnchantment(this.client.world, slot);
+            RegistryEntry<Enchantment> enchantment = this.handler.getEnchantment(this.client.world, slot);
             //make good power calc
             int power = this.handler.getEnchantmentPower(this.client.world, slot);
             //Magicky.LOGGER.info("power:"+power);
-            if (power == 0) {
+            if (power == 0 || enchantment == null) {
                 RenderSystem.enableBlend();
                 context.drawGuiTexture(ENCHANTMENT_SLOT_DISABLED_TEXTURE, zeroX + FIELD_OFFSET_X, zeroY + OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT);
                 RenderSystem.disableBlend();
             } else {
                 String string = "" + power;
                 int p = FIELD_WIDTH - 7 - this.textRenderer.getWidth(string);
-                StringVisitable stringVisitable = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment.enchantment, enchantment.level).getString()).fillStyle(Style.EMPTY.withFont(Identifier.ofVanilla("alt"))), width, Style.EMPTY);
-                StringVisitable stringClear = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment.enchantment, enchantment.level).getString()), width, Style.EMPTY);//EnchantingPhrases.getInstance().generatePhrase(this.textRenderer, p);
+                StringVisitable stringVisitable = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment, this.handler.enchantmentLevels.get(slot)).getString()).fillStyle(Style.EMPTY.withFont(Identifier.ofVanilla("alt"))), width, Style.EMPTY);
+                StringVisitable stringClear = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment, this.handler.enchantmentLevels.get(slot)).getString()), width, Style.EMPTY);//EnchantingPhrases.getInstance().generatePhrase(this.textRenderer, p);
                 int q = 6839882;
                 if ((catCount < i + 1 || this.client.player.experienceLevel < power) && !this.client.player.getAbilities().creativeMode) {
                     RenderSystem.enableBlend();
@@ -250,13 +250,13 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
             int slot = this.firstShown() + i;
             int power = this.handler.getEnchantmentPower(this.client.world, slot);
             //Optional<RegistryEntry.Reference<Enchantment>> optional = this.client.world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(indexedIterable.getRawId(this.handler.enchantments.get(j).enchantment));
-            EnchantmentLevelEntry enchantment = this.handler.getEnchantment(this.client.world, slot);
+            RegistryEntry<Enchantment> enchantment = this.handler.getEnchantment(this.client.world, slot);
             if (enchantment != null) {
-                int level = enchantment.level;
+                int level = this.handler.enchantmentLevels.get(slot);
                 int m = slot + 1;
                 if (this.isPointWithinBounds(FIELD_OFFSET_X, OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT, (double)mouseX, (double)mouseY) && power > 0 && level >= 0 /*&& optional != null*/) {
                     List<Text> list = Lists.newArrayList();
-                    list.add(Text.translatable("container.enchant.clue", new Object[]{Enchantment.getName(enchantment.enchantment, level)}).formatted(Formatting.WHITE));
+                    list.add(Text.translatable("container.enchant.clue", new Object[]{Enchantment.getName(enchantment, level)}).formatted(Formatting.WHITE));
                     if (!creative) {
                         list.add(ScreenTexts.EMPTY);
                         if (this.client.player.experienceLevel < power) {
