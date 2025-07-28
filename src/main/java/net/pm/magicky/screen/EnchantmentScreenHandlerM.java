@@ -7,11 +7,7 @@ import java.util.List;
 
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.ChiseledBookshelfBlock;
 import net.minecraft.block.EnchantingTableBlock;
-import net.minecraft.block.entity.ChiseledBookshelfBlockEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.EnchantmentLevelEntry;
@@ -23,7 +19,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.EnchantmentTags;
 import net.minecraft.screen.*;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -36,6 +31,8 @@ import net.minecraft.util.collection.IndexedIterable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.pm.magicky.datagen.MagickyItemTags;
+import net.pm.magicky.enchantment.EnchantingCatalyst;
+import net.pm.magicky.enchantment.EnchantmentCatalysts;
 
 public class EnchantmentScreenHandlerM extends ScreenHandler {
     static final Identifier EMPTY_LAPIS_SLOT_TEXTURE = Identifier.ofVanilla("item/empty_slot_lapis_lazulii");
@@ -107,6 +104,10 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
         if (index > this.getEnchantmentCount()) return null;
         return world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(this.enchantmentIds.get(index)).orElse(null);
     }
+    public int getEnchantmentLevel(World world, int index) {
+        if (index > this.getEnchantmentCount()) return -1;
+        return this.enchantmentLevels.get(index);
+    }
 
     public int getEnchantmentCount() {
         for (int i = 0; i < MAX_ENCHANTMENTS_SIZE; i++) {
@@ -130,6 +131,10 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
         }
     }
 
+    public EnchantingCatalyst getCatType() {
+        return EnchantmentCatalysts.catalysts.get(inventory.getStack(1).getItem());
+    }
+
     public void onContentChanged(Inventory inventory) {
         if (inventory == this.inventory) {
             this.clearEnchantments();
@@ -142,13 +147,14 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
                 this.context.run((world, pos) -> {
                     //get the table's enchant power
                     this.maxPower.set(getMagicPower(world, pos));
+                    EnchantingCatalyst catType = getCatType();
 
                     //get all possible enchantments based off of catalyst
                     List<EnchantmentLevelEntry> enchantmentList;
                     if(catStack.hasEnchantments()) {
                         enchantmentList = getEnchantmentsOn(catStack);
-                    } else if(catStack.isIn(MagickyItemTags.INSCRIBING_CATALYST) || catStack.isIn(MagickyItemTags.CLONING_CATALYST)) {
-                        enchantmentList = getBookshelfEnchantments(world, pos);
+                    } else if(catType != null) {
+                        enchantmentList = catType.getAllEnchantments(world, pos);
                     } else {
                         return;
                     }
@@ -172,50 +178,6 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
             }
         }
         return magicPower;
-    }
-
-    public int getEnchantmentPower(World world, int index) {
-        //if (this.enchantmentLevels.get(index) > -1) return 0;
-
-        return (this.enchantmentLevels.get(index) > -1 && this.enchantmentIds.get(index) > -1) ? ((this.enchantmentLevels.get(index) * (world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(this.enchantmentIds.get(index)).get().isIn(EnchantmentTags.TREASURE) ? 4 : 1))*2) - 1 : 0; //maybe remove the *2 -1?
-    }
-
-    public List<EnchantmentLevelEntry> getBookshelfEnchantments(World world, BlockPos pos) {
-        List<EnchantmentLevelEntry> availableList = new ArrayList<>();
-        //TODO: check that bookshelf has line of sight
-        //foreach position
-        for (BlockPos offsetPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
-            BlockPos blockPos = pos.add(offsetPos);
-            //if it's a chiseled bookshelf
-            if (world.getBlockState(blockPos).getBlock() instanceof ChiseledBookshelfBlock && world.getBlockEntity(blockPos) instanceof ChiseledBookshelfBlockEntity blockEntity) {
-                //all the slots
-                for (int i = 0; i < blockEntity.size(); i++) {
-                    //for all the enchantments (if any are present)
-                    for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getEnchantments().getEnchantments()) {
-                        EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getEnchantments().getLevel(enchantment));
-                        //add only new ones
-                        boolean present = false;
-                        for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
-                            present = true;
-                            break;
-                        }
-                        if (!present) availableList.add(entry);
-                    }
-                    //same with stored enchantements
-                    for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getEnchantments()) {
-                        EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getLevel(enchantment));
-                        //add only new ones
-                        boolean present = false;
-                        for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
-                            present = true;
-                            break;
-                        }
-                        if (!present) availableList.add(entry);
-                    }
-                }
-            }
-        }
-        return availableList;
     }
 
     public List<EnchantmentLevelEntry> getEnchantmentsOn (ItemStack itemStack) {
@@ -248,49 +210,51 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
             //get stacks
             ItemStack itemStack = this.inventory.getStack(0);
             ItemStack catStack = this.inventory.getStack(1);
-            //catalyst cost (double if treasure enchantment)
-            int catCost = (this.enchantmentLevels.get(id)) * (this.getEnchantment(player.getWorld(), id).isIn(EnchantmentTags.TREASURE) ? 2 : 1);
-            //if not enough catalyst
-            if ((catStack.isEmpty() || catStack.getCount() < catCost) && !player.isInCreativeMode()) {
+            int level = this.enchantmentLevels.get(id);
+            EnchantingCatalyst catType = getCatType();
+            if (catType == null) return false;
+            //catalyst & xp cost
+            int catCost = catType.catCost(level, this.getEnchantment(player.getWorld(), id));
+            int xpCost = catType.xpCost(level, this.getEnchantment(player.getWorld(), id));
+            //if not enough catalyst or xp
+            if ((catStack.getCount() < catCost || player.experienceLevel < xpCost) && !player.isInCreativeMode()) {
                 return false;
             }
-            //if not enough xp or invalid item/enchantment
-            else if (this.enchantmentLevels.get(id) <= 0 || itemStack.isEmpty() || (player.experienceLevel < catCost || player.experienceLevel < this.enchantmentLevels.get(id)) && !player.getAbilities().creativeMode) {
+            //if invalid item
+            if (itemStack.isEmpty()) {
                 return false;
-            } else {
-                this.context.run((world, pos) -> {
-                    //new itemStack
-                    ItemStack newStack = itemStack;
-                    RegistryEntry<Enchantment> enchantment = this.getEnchantment(world, id);
-                    if (enchantment != null) {
-                        player.applyEnchantmentCosts(newStack, catCost);
-                        if (newStack.isOf(Items.BOOK)) {
-                            newStack = itemStack.withItem(Items.ENCHANTED_BOOK);
-                            this.inventory.setStack(0, newStack);
-                        }
-
-                        newStack.addEnchantment(enchantment, this.enchantmentLevels.get(id));
-
-                        catStack.decrementUnlessCreative(catCost, player);
-                        if (catStack.isEmpty()) {
-                            this.inventory.setStack(1, ItemStack.EMPTY);
-                        }
-
-                        player.incrementStat(Stats.ENCHANT_ITEM);
-                        if (player instanceof ServerPlayerEntity) {
-                            Criteria.ENCHANTED_ITEM.trigger((ServerPlayerEntity)player, newStack, catCost);
-                        }
-
-                        this.inventory.markDirty();
-                        //this.seed.set(player.getEnchantmentTableSeed());
-                        this.onContentChanged(this.inventory);
-                        world.playSound((PlayerEntity)null, pos, SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.BLOCKS, 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
+            }
+            this.context.run((world, pos) -> {
+                //new itemStack
+                ItemStack newStack = itemStack;
+                RegistryEntry<Enchantment> enchantment = this.getEnchantment(world, id);
+                if (enchantment != null && level > 0) {
+                    player.applyEnchantmentCosts(newStack, catCost);
+                    if (newStack.isOf(Items.BOOK)) {
+                        newStack = itemStack.withItem(Items.ENCHANTED_BOOK);
+                        this.inventory.setStack(0, newStack);
                     }
 
-                });
-                this.onContentChanged(this.inventory);
-                return true;
-            }
+                    newStack.addEnchantment(enchantment, level);
+
+                    catStack.decrementUnlessCreative(catCost, player);
+                    if (catStack.isEmpty()) {
+                        this.inventory.setStack(1, ItemStack.EMPTY);
+                    }
+
+                    player.incrementStat(Stats.ENCHANT_ITEM);
+                    if (player instanceof ServerPlayerEntity) {
+                        Criteria.ENCHANTED_ITEM.trigger((ServerPlayerEntity)player, newStack, xpCost);
+                    }
+
+                    this.inventory.markDirty();
+                    //this.seed.set(player.getEnchantmentTableSeed());
+                    //this.onContentChanged(this.inventory);
+                    world.playSound((PlayerEntity)null, pos, SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.BLOCKS, 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
+                }
+            });
+            //this.onContentChanged(this.inventory);
+            return true;
         } else {
             String var10000 = String.valueOf(player.getName());
             Util.error(var10000 + " pressed invalid button id: " + id);
@@ -357,4 +321,5 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
 
         return itemStack;
     }
+
 }

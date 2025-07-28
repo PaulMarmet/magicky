@@ -27,6 +27,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.random.Random;
 import net.pm.magicky.Magicky;
+import net.pm.magicky.enchantment.EnchantingCatalyst;
 import net.pm.magicky.screen.EnchantmentScreenHandlerM;
 
 import java.util.List;
@@ -170,13 +171,14 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
         context.drawGuiTexture(scroller, zeroX + SCROLLBAR_OFFSET_X,  zeroY + OFFSET_Y + skroll, SCROLLBAR_WIDTH, SCROLLBAR_HEIGHT);
 
         int catCount = this.handler.getCatalystCount();
+        EnchantingCatalyst catType = this.handler.getCatType();
         //Magicky.LOGGER.info("has: "+this.handler.getEnchantmentCount());
 
         for(int i = 0; i < (HEIGHT / SLOT_HEIGHT); ++i) {
             int slot = this.firstShown() + i;
             RegistryEntry<Enchantment> enchantment = this.handler.getEnchantment(this.client.world, slot);
             //make good power calc
-            int power = this.handler.getEnchantmentPower(this.client.world, slot);
+            int power = catType == null ? 0 : catType.xpCost(this.handler, slot, this.client.world); //prevent from null
             //Magicky.LOGGER.info("power:"+power);
             if (power == 0 || enchantment == null) {
                 RenderSystem.enableBlend();
@@ -245,36 +247,36 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
         this.drawMouseoverTooltip(context, mouseX, mouseY);
         boolean creative = this.client.player.getAbilities().creativeMode;
         int catCount = this.handler.getCatalystCount();
+        EnchantingCatalyst catType = this.handler.getCatType();
 
         for(int i = 0; i < (HEIGHT / SLOT_HEIGHT); ++i) {
             int slot = this.firstShown() + i;
-            int power = this.handler.getEnchantmentPower(this.client.world, slot);
-            //Optional<RegistryEntry.Reference<Enchantment>> optional = this.client.world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(indexedIterable.getRawId(this.handler.enchantments.get(j).enchantment));
             RegistryEntry<Enchantment> enchantment = this.handler.getEnchantment(this.client.world, slot);
-            if (enchantment != null) {
-                int level = this.handler.enchantmentLevels.get(slot);
-                int m = slot + 1;
-                if (this.isPointWithinBounds(FIELD_OFFSET_X, OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT, (double)mouseX, (double)mouseY) && power > 0 && level >= 0 /*&& optional != null*/) {
+            int enchantmentLevel = this.handler.getEnchantmentLevel(this.client.world, slot);
+            if (enchantment != null && enchantmentLevel >= 0 && catType != null) {
+                int levelCost = catType.xpCost(this.handler, slot, this.client.world);
+                int catalystCost = catType.catCost(this.handler, slot, this.client.world);
+                if (this.isPointWithinBounds(FIELD_OFFSET_X, OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT, mouseX, mouseY)/* && levelCost > 0 && optional != null*/) {
                     List<Text> list = Lists.newArrayList();
-                    list.add(Text.translatable("container.enchant.clue", new Object[]{Enchantment.getName(enchantment, level)}).formatted(Formatting.WHITE));
+                    list.add(Text.translatable("container.enchant.clue", new Object[]{Enchantment.getName(enchantment, enchantmentLevel)}).formatted(Formatting.WHITE));
                     if (!creative) {
                         list.add(ScreenTexts.EMPTY);
-                        if (this.client.player.experienceLevel < power) {
-                            list.add(Text.translatable("container.enchant.level.requirement", new Object[]{this.handler.getEnchantmentPower(this.client.world, slot)}).formatted(Formatting.RED));
+                        if (this.client.player.experienceLevel < levelCost) {
+                            list.add(Text.translatable("container.enchant.level.requirement", levelCost).formatted(Formatting.RED));
                         } else {
                             MutableText mutableText;
-                            if (m == 1) {
+                            if (catalystCost == 1) {
                                 mutableText = Text.translatable("container.enchant.lapis.one");
                             } else {
-                                mutableText = Text.translatable("container.enchant.lapis.many", new Object[]{m});
+                                mutableText = Text.translatable("container.enchant.lapis.many", new Object[]{catalystCost});
                             }
 
-                            list.add(mutableText.formatted(catCount >= m ? Formatting.GRAY : Formatting.RED));
+                            list.add(mutableText.formatted(catCount >= catalystCost ? Formatting.GRAY : Formatting.RED));
                             MutableText mutableText2;
-                            if (m == 1) {
+                            if (levelCost == 1) {
                                 mutableText2 = Text.translatable("container.enchant.level.one");
                             } else {
-                                mutableText2 = Text.translatable("container.enchant.level.many", new Object[]{m});
+                                mutableText2 = Text.translatable("container.enchant.level.many", new Object[]{levelCost});
                             }
 
                             list.add(mutableText2.formatted(Formatting.GRAY));
@@ -308,7 +310,7 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
         boolean bl = false;
 
         for(int i = 0; i < this.handler.getEnchantmentCount(); ++i) {
-            if (this.handler.getEnchantmentPower(this.client.world, i) != 0) {
+            if (this.handler.getCatType().xpCost(this.handler, i, this.client.world) != 0) {
                 bl = true;
             }
         }

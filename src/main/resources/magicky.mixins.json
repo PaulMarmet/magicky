@@ -10,7 +10,6 @@
     "NameTagItemMixin",
     "PlayerMixin",
     "ProjectileEntityMixin",
-    "SlotMixin",
     "ToolMaterialsMixin"
   ],
   "injectors": {
