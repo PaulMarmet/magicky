@@ -163,6 +163,7 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
 
                     this.setEnchantments(world, enchantmentList);
                     this.sendContentUpdates();
+                    this.updateToClient();
                 });
             }
         }
@@ -249,11 +250,9 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
 
                     this.inventory.markDirty();
                     //this.seed.set(player.getEnchantmentTableSeed());
-                    //this.onContentChanged(this.inventory);
                     world.playSound((PlayerEntity)null, pos, SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.BLOCKS, 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
                 }
             });
-            //this.onContentChanged(this.inventory);
             return true;
         } else {
             String var10000 = String.valueOf(player.getName());
