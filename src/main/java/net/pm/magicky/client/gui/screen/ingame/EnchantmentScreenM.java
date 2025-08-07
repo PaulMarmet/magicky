@@ -225,7 +225,7 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
         DiffuseLighting.method_34742();
         context.getMatrices().push();
         context.getMatrices().translate((float)x + 33.0F, (float)y + 31.0F, 100.0F);
-        float h = 40.0F;
+        //float h = 40.0F;
         context.getMatrices().scale(-40.0F, 40.0F, 40.0F);
         context.getMatrices().multiply(RotationAxis.POSITIVE_X.rotationDegrees(25.0F));
         context.getMatrices().translate((1.0F - f) * 0.2F, (1.0F - f) * 0.1F, (1.0F - f) * 0.25F);
@@ -252,7 +252,7 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
         for(int i = 0; i < (HEIGHT / SLOT_HEIGHT); ++i) {
             int slot = this.firstShown() + i;
             RegistryEntry<Enchantment> enchantment = this.handler.getEnchantment(this.client.world, slot);
-            int enchantmentLevel = this.handler.getEnchantmentLevel(this.client.world, slot);
+            int enchantmentLevel = this.handler.getEnchantmentLevel(slot);
             if (enchantment != null && enchantmentLevel >= 0 && catType != null) {
                 int levelCost = catType.xpCost(this.handler, slot, this.client.world);
                 int catalystCost = catType.catCost(this.handler, slot, this.client.world);
@@ -323,7 +323,7 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
 
         this.nextPageTurningSpeed = MathHelper.clamp(this.nextPageTurningSpeed, 0.0F, 1.0F);
         float f = (this.approximatePageAngle - this.nextPageAngle) * 0.4F;
-        float g = 0.2F;
+        //float g = 0.2F;
         f = MathHelper.clamp(f, -0.2F, 0.2F);
         this.pageRotationSpeed += (f - this.pageRotationSpeed) * 0.9F;
         this.nextPageAngle += this.pageRotationSpeed;

@@ -6,11 +6,15 @@ import net.minecraft.block.entity.ChiseledBookshelfBlockEntity;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.EnchantmentLevelEntry;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.EnchantmentTags;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.pm.magicky.screen.EnchantmentScreenHandlerM;
@@ -30,6 +34,8 @@ public class EnchantmentCatalysts {
 
     public static final class LapisCatalyst implements EnchantingCatalyst {
         @Override
+        public boolean canSkipLevels() {return false;}
+        @Override
         public int catCost(EnchantmentScreenHandlerM handler, int index, World world) {
             return catCost(handler.enchantmentLevels.get(index), handler.getEnchantment(world, index));
         }
@@ -46,7 +52,7 @@ public class EnchantmentCatalysts {
             return (level > -1 && enchantment != null) ? level * (enchantment.isIn(EnchantmentTags.TREASURE) ? 2 : 1) : 0;
         }
         @Override
-        public List<EnchantmentLevelEntry> getAllEnchantments(World world, BlockPos pos) {
+        public List<EnchantmentLevelEntry> getAllEnchantments(EnchantmentScreenHandlerM handler, World world, BlockPos pos) {
             List<EnchantmentLevelEntry> availableList = new ArrayList<>();
             //TODO: check that bookshelf has line of sight maybe
             //TODO: add the "basic enchantments" however i end up implementing those
@@ -83,6 +89,74 @@ public class EnchantmentCatalysts {
                 }
             }
             return availableList;
+        }
+
+        @Override
+        public ItemStack enchant(Inventory inventory, ItemStack item, RegistryEntry<Enchantment> enchantment, int level) {
+            if (item.isOf(Items.BOOK)) {
+                item = inventory.getStack(0).withItem(Items.ENCHANTED_BOOK);
+                inventory.setStack(0, item);
+            }
+
+            item.addEnchantment(enchantment, level);
+            return item;
+        }
+    }
+
+    public static final class EnchantedCatalyst implements EnchantingCatalyst {
+        @Override
+        public boolean canSkipLevels() {return true;}
+        @Override
+        public int catCost(EnchantmentScreenHandlerM handler, int index, World world) {
+            return 0;
+        }
+        @Override
+        public int xpCost(EnchantmentScreenHandlerM handler, int index, World world) {
+            return xpCost(handler.enchantmentLevels.get(index), handler.getEnchantment(world, index));
+        }
+        @Override
+        public int catCost(int level, RegistryEntry<Enchantment> enchantment) {
+            return 0;
+        }
+        @Override
+        public int xpCost(int level, RegistryEntry<Enchantment> enchantment) {
+            return (level > -1 && enchantment != null) ? level * (enchantment.isIn(EnchantmentTags.TREASURE) ? 4 : 2) : 0;
+        }
+        @Override
+        public List<EnchantmentLevelEntry> getAllEnchantments(EnchantmentScreenHandlerM handler, World world, BlockPos pos) {
+            List<EnchantmentLevelEntry> availableList = new ArrayList<>();
+
+            ItemStack catalyst = handler.getSlot(1).getStack();
+
+            for (RegistryEntry<Enchantment> enchantment : catalyst.getEnchantments().getEnchantments()) {
+                EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, catalyst.getEnchantments().getLevel(enchantment));
+                //add only new ones
+                boolean present = false;
+                for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                    present = true;
+                    break;
+                }
+                if (!present) availableList.add(entry);
+            }
+
+            return availableList;
+        }
+
+        @Override
+        public ItemStack enchant(Inventory inventory, ItemStack item, RegistryEntry<Enchantment> newEnchantment, int level) {
+            //TODO: deal with enchanted books and enchanting books
+            ItemStack catStack = inventory.getStack(1);
+            EnchantmentHelper.apply(catStack, components -> components.remove(enchantment -> enchantment.matchesId(Identifier.of(newEnchantment.getIdAsString()))));
+            inventory.setStack(1, catStack);
+
+            if (item.isOf(Items.BOOK)) {
+                item = inventory.getStack(0).withItem(Items.ENCHANTED_BOOK);
+                inventory.setStack(0, item);
+            }
+
+            item.addEnchantment(newEnchantment, level);
+
+            return item;
         }
     }
 }

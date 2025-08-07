@@ -2,7 +2,6 @@ package net.pm.magicky.screen;
 
 import com.mojang.datafixers.util.Pair;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.advancement.criterion.Criteria;
@@ -16,7 +15,6 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.*;
@@ -30,7 +28,6 @@ import net.minecraft.util.Util;
 import net.minecraft.util.collection.IndexedIterable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.pm.magicky.datagen.MagickyItemTags;
 import net.pm.magicky.enchantment.EnchantingCatalyst;
 import net.pm.magicky.enchantment.EnchantmentCatalysts;
 
@@ -74,7 +71,7 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
         //Secondary Slot
         this.addSlot(new Slot(this.inventory, 1, 35, 47) {
             public boolean canInsert(ItemStack stack) {
-                return stack.isIn(MagickyItemTags.ENCHANTING_CATALYST) || stack.hasEnchantments();
+                return EnchantmentCatalysts.catalysts.get(stack.getItem()) != null || stack.hasEnchantments();
             }
 
             public Pair<Identifier, Identifier> getBackgroundSprite() {
@@ -104,7 +101,7 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
         if (index > this.getEnchantmentCount()) return null;
         return world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(this.enchantmentIds.get(index)).orElse(null);
     }
-    public int getEnchantmentLevel(World world, int index) {
+    public int getEnchantmentLevel(int index) {
         if (index > this.getEnchantmentCount()) return -1;
         return this.enchantmentLevels.get(index);
     }
@@ -132,7 +129,8 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
     }
 
     public EnchantingCatalyst getCatType() {
-        return EnchantmentCatalysts.catalysts.get(inventory.getStack(1).getItem());
+        ItemStack catalyst = inventory.getStack(1);
+        return catalyst.hasEnchantments() ? new EnchantmentCatalysts.EnchantedCatalyst() : EnchantmentCatalysts.catalysts.get(catalyst.getItem());
     }
 
     public void onContentChanged(Inventory inventory) {
@@ -140,7 +138,6 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
             this.clearEnchantments();
 
             ItemStack itemStack = inventory.getStack(0);
-            ItemStack catStack = inventory.getStack(1);
             /*if the item is enchantable, not if the itemStack is enchantable
               this makes it so that an item with enchants can still be enchanted*/
             if (!itemStack.isEmpty() && itemStack.getItem().isEnchantable(itemStack) /*&& !catStack.isEmpty()*/) {
@@ -151,10 +148,8 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
 
                     //get all possible enchantments based off of catalyst
                     List<EnchantmentLevelEntry> enchantmentList;
-                    if(catStack.hasEnchantments()) {
-                        enchantmentList = getEnchantmentsOn(catStack);
-                    } else if(catType != null) {
-                        enchantmentList = catType.getAllEnchantments(world, pos);
+                    if(catType != null) {
+                        enchantmentList = catType.getAllEnchantments(this, world, pos);
                     } else {
                         return;
                     }
@@ -181,23 +176,12 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
         return magicPower;
     }
 
-    public List<EnchantmentLevelEntry> getEnchantmentsOn (ItemStack itemStack) {
-        List<EnchantmentLevelEntry> enchantments = new ArrayList<>();
-        //for all the enchantments (if any are present)
-        for (RegistryEntry<Enchantment> enchantment : itemStack.getEnchantments().getEnchantments()) {
-            EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, itemStack.getEnchantments().getLevel(enchantment));
-            //add only new ones
-            if (!enchantments.contains(entry)) enchantments.add(entry);
-        }
-        return enchantments;
-    }
-
     public List<EnchantmentLevelEntry> getPossibleEnchantments(List<EnchantmentLevelEntry> available, ItemStack itemStack) {
         return available.stream().filter((enchantment) -> {
             //item supports the enchantment
             if (!enchantment.enchantment.value().isSupportedItem(itemStack)) return false;
-            //next lowest level
-            if (EnchantmentHelper.getLevel(enchantment.enchantment, itemStack)+1 != enchantment.level) return false;
+            //next lowest level unless level step bypass is true
+            if (EnchantmentHelper.getLevel(enchantment.enchantment, itemStack)+1 != enchantment.level && !getCatType().canSkipLevels()) return false;
             //no conflicting enchantments
             for (RegistryEntry<Enchantment> itemEnchant : itemStack.getEnchantments().getEnchantments()) if (!Enchantment.canBeCombined(itemEnchant, enchantment.enchantment) && itemEnchant != enchantment.enchantment) return false;
 
@@ -231,12 +215,9 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
                 RegistryEntry<Enchantment> enchantment = this.getEnchantment(world, id);
                 if (enchantment != null && level > 0) {
                     player.applyEnchantmentCosts(newStack, catCost);
-                    if (newStack.isOf(Items.BOOK)) {
-                        newStack = itemStack.withItem(Items.ENCHANTED_BOOK);
-                        this.inventory.setStack(0, newStack);
-                    }
 
-                    newStack.addEnchantment(enchantment, level);
+                    //the enchant function
+                    newStack = catType.enchant(this.inventory, newStack, enchantment, level);
 
                     catStack.decrementUnlessCreative(catCost, player);
                     if (catStack.isEmpty()) {
@@ -250,7 +231,7 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
 
                     this.inventory.markDirty();
                     //this.seed.set(player.getEnchantmentTableSeed());
-                    world.playSound((PlayerEntity)null, pos, SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.BLOCKS, 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
+                    world.playSound(null, pos, SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE, SoundCategory.BLOCKS, 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
                 }
             });
             return true;
@@ -291,7 +272,7 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
                 if (!this.insertItem(itemStack2, 2, 38, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (itemStack2.isIn(MagickyItemTags.ENCHANTING_CATALYST)) {
+            } else if (EnchantmentCatalysts.catalysts.get(itemStack2.getItem()) != null || (this.slots.getFirst()).hasStack() && (this.slots.get(1)).canInsert(itemStack2)) {
                 if (!this.insertItem(itemStack2, 1, 2, true)) {
                     return ItemStack.EMPTY;
                 }
