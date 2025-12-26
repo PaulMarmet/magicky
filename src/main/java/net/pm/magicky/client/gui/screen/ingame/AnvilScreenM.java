@@ -17,7 +17,7 @@ import net.pm.magicky.screen.AnvilScreenHandlerM;
 @Environment(EnvType.CLIENT)
 public class AnvilScreenM extends ForgingScreen<AnvilScreenHandlerM> {
     private static final Identifier ERROR_TEXTURE = Identifier.ofVanilla("container/anvil/error");
-    private static final Identifier TEXTURE = Identifier.of(Magicky.MOD_ID, "textures/gui/container/anvil_m.png");
+    private static final Identifier TEXTURE = Identifier.of(Magicky.MOD_ID, "textures/gui/container/anvil.png");
     private static final Text TOO_EXPENSIVE_TEXT = Text.translatable("container.repair.expensive");
     private final PlayerEntity player;
 

@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AnvilBlockMixin",
+    "EnchantingTableBlockMixin",
     "EnchantmentHelperMixin",
     "ItemMixin",
     "ItemsMixin",

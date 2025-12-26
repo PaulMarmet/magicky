@@ -1,5 +1,7 @@
 accessWidener v2 named
 
+accessible method net/minecraft/screen/slot/Slot onTake (I)V
+
 accessible field net/minecraft/block/AnvilBlock TITLE Lnet/minecraft/text/Text;
 
 accessible field net/minecraft/client/network/ClientPlayerEntity client Lnet/minecraft/client/MinecraftClient;

@@ -8,7 +8,8 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.pm.magicky.Magicky;
-import net.pm.magicky.MagickyTags;
+import net.pm.magicky.datagen.MagickyEnchantmentTags;
+import net.pm.magicky.datagen.MagickyItemTags;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,7 +20,7 @@ public class ItemMixin {
 
     @Inject(method = "canRepair", at = @At(value = "RETURN"), cancellable = true)
     private void repairTag(ItemStack stack, ItemStack ingredient, CallbackInfoReturnable<Boolean> cir) {
-        if (ingredient.isIn(MagickyTags.MENDING_AGENT) && EnchantmentHelper.hasAnyEnchantmentsIn(stack, MagickyTags.MENDS)) {
+        if (ingredient.isIn(MagickyItemTags.MENDING_AGENT) && EnchantmentHelper.hasAnyEnchantmentsIn(stack, MagickyEnchantmentTags.MENDS)) {
             cir.setReturnValue(true);
         }
         Identifier ingredientID = Registries.ITEM.getId(ingredient.getItem());

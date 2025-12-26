@@ -32,7 +32,6 @@ public class Magicky implements ModInitializer {
 			}
 		});
 
-		MagickyTags.registerTags();
 		MagickyEnchantments.registerEnchantments();
 	}
 }

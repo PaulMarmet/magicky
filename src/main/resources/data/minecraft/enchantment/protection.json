@@ -4,27 +4,16 @@
     "translate": "enchantment.minecraft.protection"
   },
   "effects": {
-    "minecraft:damage_protection": [
+    "minecraft:attributes": [
       {
-        "effect": {
-          "type": "minecraft:add",
-          "value": {
-            "type": "minecraft:linear",
-            "base": 1.0,
-            "per_level_above_first": 1.0
-          }
+        "attribute": "minecraft:generic.armor",
+        "id": "minecraft:enchantment.protection",
+        "amount": {
+          "type": "minecraft:linear",
+          "base": 1,
+          "per_level_above_first": 1
         },
-        "requirements": {
-          "condition": "minecraft:damage_source_properties",
-          "predicate": {
-            "tags": [
-              {
-                "expected": false,
-                "id": "minecraft:bypasses_invulnerability"
-              }
-            ]
-          }
-        }
+        "operation": "add_value"
       }
     ]
   },
