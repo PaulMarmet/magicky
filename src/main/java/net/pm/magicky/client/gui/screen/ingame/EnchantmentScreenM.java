@@ -17,10 +17,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.StringVisitable;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
@@ -90,8 +87,8 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
             int slotOffset = SLOT_HEIGHT * k;
             double horizontalBounds = mouseX - (double)(localX + FIELD_OFFSET_X);
             double verticalBounds = mouseY - (double)(localY + OFFSET_Y + slotOffset);
-            if (horizontalBounds >= 0.0 && verticalBounds >= 0.0 && horizontalBounds < FIELD_WIDTH && verticalBounds < SLOT_HEIGHT && this.handler.onButtonClick(this.client.player, k + this.scrollOffset)) {
-                this.client.interactionManager.clickButton(this.handler.syncId, k + this.scrollOffset);
+            if (horizontalBounds >= 0.0 && verticalBounds >= 0.0 && horizontalBounds < FIELD_WIDTH && verticalBounds < SLOT_HEIGHT && this.handler.onButtonClick(this.client.player, k + this.firstShown())) {
+                this.client.interactionManager.clickButton(this.handler.syncId, k + this.firstShown());
                 return true;
             }
         }
@@ -186,16 +183,17 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
                 RenderSystem.disableBlend();
             } else {
                 String string = "" + power;
-                int p = FIELD_WIDTH - 7 - this.textRenderer.getWidth(string);
-                StringVisitable stringVisitable = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment, this.handler.enchantmentLevels.get(slot)).getString()).fillStyle(Style.EMPTY.withFont(Identifier.ofVanilla("alt"))), width, Style.EMPTY);
+                int textWidth = FIELD_WIDTH - 7 - this.textRenderer.getWidth(string);
+                StringVisitable stringVisitable = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment, this.handler.enchantmentLevels.get(slot)).getString()).fillStyle(Style.EMPTY.withFont(Identifier.ofVanilla("alt"))), textWidth, Style.EMPTY);
+//                stringVisitable = (StringVisitable) this.textRenderer.wrapLines(stringVisitable, p).getFirst();
                 StringVisitable stringClear = textRenderer.getTextHandler().trimToWidth(Text.literal(Enchantment.getName(enchantment, this.handler.enchantmentLevels.get(slot)).getString()), width, Style.EMPTY);//EnchantingPhrases.getInstance().generatePhrase(this.textRenderer, p);
                 int q = 6839882;
-                if ((catCount < i + 1 || this.client.player.experienceLevel < power) && !this.client.player.getAbilities().creativeMode) {
+                if ((catCount < catType.catCost(this.handler, slot, this.client.world) || this.client.player.experienceLevel < power) && !this.client.player.getAbilities().creativeMode) {
                     RenderSystem.enableBlend();
                     context.drawGuiTexture(ENCHANTMENT_SLOT_DISABLED_TEXTURE, zeroX + FIELD_OFFSET_X, zeroY + OFFSET_Y + SLOT_HEIGHT * i, FIELD_WIDTH, SLOT_HEIGHT);
 //                    context.drawGuiTexture(LEVEL_DISABLED_TEXTURES[l], m + 1, j + 15 + 19 * l, 16, 16);
                     RenderSystem.disableBlend();
-                    context.drawTextWrapped(this.textRenderer, stringVisitable, zeroX + FIELD_OFFSET_X + TEXT_BUFFER, zeroY + OFFSET_Y + TEXT_BUFFER + SLOT_HEIGHT * i, p, (q & 16711422) >> 1);
+                    context.drawTextWrapped(this.textRenderer, stringVisitable, zeroX + FIELD_OFFSET_X + TEXT_BUFFER, zeroY + OFFSET_Y + TEXT_BUFFER + SLOT_HEIGHT * i, textWidth, (q & 16711422) >> 1);
                 } else {
                     int r = mouseX - (zeroX + FIELD_OFFSET_X);
                     int s = mouseY - (zeroY + OFFSET_Y + SLOT_HEIGHT * i);
@@ -209,7 +207,7 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
 
                     //context.drawGuiTexture(LEVEL_TEXTURES[l], m + 1, j + 15 + 19 * l, 16, 16);
                     RenderSystem.disableBlend();
-                    context.drawTextWrapped(this.textRenderer, stringVisitable, zeroX + FIELD_OFFSET_X + TEXT_BUFFER, zeroY + OFFSET_Y + TEXT_BUFFER + SLOT_HEIGHT * i, p, q);
+                    context.drawTextWrapped(this.textRenderer, stringVisitable, zeroX + FIELD_OFFSET_X + TEXT_BUFFER, zeroY + OFFSET_Y + TEXT_BUFFER + SLOT_HEIGHT * i, textWidth, q);
                     q = 8453920;
                 }
 
@@ -264,22 +262,17 @@ private static final Identifier SCROLLER_TEXTURE = Identifier.of(Magicky.MOD_ID,
                         if (this.client.player.experienceLevel < levelCost) {
                             list.add(Text.translatable("container.enchant.level.requirement", levelCost).formatted(Formatting.RED));
                         } else {
-                            MutableText mutableText;
-                            if (catalystCost == 1) {
-                                mutableText = Text.translatable("container.enchant.lapis.one");
-                            } else {
-                                mutableText = Text.translatable("container.enchant.lapis.many", new Object[]{catalystCost});
-                            }
+                            MutableText catalystText = Text.literal(catalystCost + " ").append(this.handler.getSlot(1).getStack().getName());
 
-                            list.add(mutableText.formatted(catCount >= catalystCost ? Formatting.GRAY : Formatting.RED));
-                            MutableText mutableText2;
+                            list.add(catalystText.formatted(catCount >= catalystCost ? Formatting.GRAY : Formatting.RED));
+                            MutableText experienceText;
                             if (levelCost == 1) {
-                                mutableText2 = Text.translatable("container.enchant.level.one");
+                                experienceText = Text.translatable("container.enchant.level.one");
                             } else {
-                                mutableText2 = Text.translatable("container.enchant.level.many", new Object[]{levelCost});
+                                experienceText = Text.translatable("container.enchant.level.many", new Object[]{levelCost});
                             }
 
-                            list.add(mutableText2.formatted(Formatting.GRAY));
+                            list.add(experienceText.formatted(Formatting.GRAY));
                         }
                     }
 

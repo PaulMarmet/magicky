@@ -13,6 +13,7 @@ import java.util.List;
 
 public interface EnchantingCatalyst {
     boolean canSkipLevels();
+    boolean canApplyIncompatible();
     int catCost(int level, RegistryEntry<Enchantment> enchantment);
 
     int catCost(EnchantmentScreenHandlerM handler, int index, World world);

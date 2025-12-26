@@ -7,6 +7,8 @@ import java.util.List;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.EnchantingTableBlock;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ChiseledBookshelfBlockEntity;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.EnchantmentLevelEntry;
@@ -32,7 +34,7 @@ import net.pm.magicky.enchantment.EnchantingCatalyst;
 import net.pm.magicky.enchantment.EnchantmentCatalysts;
 
 public class EnchantmentScreenHandlerM extends ScreenHandler {
-    static final Identifier EMPTY_LAPIS_SLOT_TEXTURE = Identifier.ofVanilla("item/empty_slot_lapis_lazulii");
+    static final Identifier EMPTY_LAPIS_SLOT_TEXTURE = Identifier.ofVanilla("item/empty_slot_lapis_lazuli");
     private final Inventory inventory;
     private final ScreenHandlerContext context;
     private final Property maxPower;
@@ -166,20 +168,28 @@ public class EnchantmentScreenHandlerM extends ScreenHandler {
     }
 
     public int getMagicPower(World world, BlockPos pos) {
-        int magicPower = 0;
+        float magicPower = 0;
 
         for (BlockPos blockPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
             if (EnchantingTableBlock.canAccessPowerProvider(world, pos, blockPos)) {
-                ++magicPower;
+                BlockEntity blockEntity = world.getBlockEntity(blockPos);
+                if (!(blockEntity instanceof ChiseledBookshelfBlockEntity)) magicPower++;
+                else {
+                    for (int i = 0; i < ((ChiseledBookshelfBlockEntity)blockEntity).size(); i++) {
+                        if (!((ChiseledBookshelfBlockEntity)blockEntity).getStack(i).isEmpty()) {
+                            magicPower += ((ChiseledBookshelfBlockEntity)blockEntity).getStack(i).hasEnchantments() ? 2f/3 : 1f/3;
+                        }
+                    }
+                }
             }
         }
-        return magicPower;
+        return (int) magicPower;
     }
 
     public List<EnchantmentLevelEntry> getPossibleEnchantments(List<EnchantmentLevelEntry> available, ItemStack itemStack) {
         return available.stream().filter((enchantment) -> {
             //item supports the enchantment
-            if (!enchantment.enchantment.value().isSupportedItem(itemStack)) return false;
+            if (!enchantment.enchantment.value().isSupportedItem(itemStack) && !getCatType().canApplyIncompatible()) return false;
             //next lowest level unless level step bypass is true
             if (EnchantmentHelper.getLevel(enchantment.enchantment, itemStack)+1 != enchantment.level && !getCatType().canSkipLevels()) return false;
             //no conflicting enchantments
