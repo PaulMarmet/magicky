@@ -4,10 +4,10 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.pm.magicky.enchantment.MagickyEnchantments;
 import net.pm.magicky.packet.RenameNameTagPayload;
 import net.pm.magicky.screen.MagickyScreenHandlers;
@@ -24,11 +24,11 @@ public class Magicky implements ModInitializer {
 		PayloadTypeRegistry.playC2S().register(RenameNameTagPayload.ID, RenameNameTagPayload.CODEC);
 
 		ServerPlayNetworking.registerGlobalReceiver(RenameNameTagPayload.ID, (payload, context) -> {
-			ItemStack itemStack = context.player().getStackInHand(payload.mainHand() ? Hand.MAIN_HAND : Hand.OFF_HAND);
+			ItemStack itemStack = context.player().getItemInHand(payload.mainHand() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND);
 			if (payload.name().isEmpty()) {
-				itemStack.remove(DataComponentTypes.CUSTOM_NAME);
+				itemStack.remove(DataComponents.CUSTOM_NAME);
 			} else {
-				itemStack.set(DataComponentTypes.CUSTOM_NAME, Text.of(payload.name()));
+				itemStack.set(DataComponents.CUSTOM_NAME, Component.nullToEmpty(payload.name()));
 			}
 		});
 

@@ -3,115 +3,115 @@ package net.pm.magicky.client.gui.screen.ingame;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.render.DiffuseLighting;
-import net.minecraft.client.util.SelectionManager;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.font.TextFieldHelper;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.pm.magicky.packet.RenameNameTagPayload;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 @Environment(EnvType.CLIENT)
 public class NameTagScreen extends Screen {
-	private static final Identifier TEXTURE = Identifier.of("magicky", "textures/gui/name_tag.png");
-	private static final Text title = Text.translatable("gui.magicky.name_tag.title");
-    private TextFieldWidget nameField;
-	private Text name;
+	private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("magicky", "textures/gui/name_tag.png");
+	private static final Component title = Component.translatable("gui.magicky.name_tag.title");
+    private EditBox nameField;
+	private Component name;
 	private static int maxLength = 50;
 	private final ItemStack stack;
-	private final Hand hand;
+	private final InteractionHand hand;
 	@Nullable
-	private SelectionManager selectionManager;
+	private TextFieldHelper selectionManager;
 
 
-	public NameTagScreen(PlayerEntity player, Hand hand) {
+	public NameTagScreen(Player player, InteractionHand hand) {
 		super(title);
 		this.hand = hand;
-		this.stack = player.getStackInHand(this.hand);
-		if (stack.contains(DataComponentTypes.CUSTOM_NAME)) {
-			this.name = stack.get(DataComponentTypes.CUSTOM_NAME);
+		this.stack = player.getItemInHand(this.hand);
+		if (stack.has(DataComponents.CUSTOM_NAME)) {
+			this.name = stack.get(DataComponents.CUSTOM_NAME);
 		} else {
-			this.name = Text.empty();
+			this.name = Component.empty();
 		}
 
 	}
 
 	@Override
 	protected void init() {
-		if (this.client == null) {
+		if (this.minecraft == null) {
 			return;
 		}
 
 		int i = (this.width) / 2;
 		int j = (this.height) / 2;
-		this.nameField = new TextFieldWidget(this.textRenderer, i - 50, j - 6, 90, 12, title);
-		this.nameField.setText("");
+		this.nameField = new EditBox(this.font, i - 50, j - 6, 90, 12, title);
+		this.nameField.setValue("");
 		this.nameField.setMaxLength(maxLength);
-		this.addSelectableChild(this.nameField);
+		this.addWidget(this.nameField);
 		this.nameField.setEditable(true);
 
-        ButtonWidget applyButton = ButtonWidget.builder(ScreenTexts.DONE, button -> this.write()).dimensions(this.width / 2 + 25, this.height * 3 / 4, 100, 20).build();
-        ButtonWidget cancelButton = ButtonWidget.builder(ScreenTexts.CANCEL, button -> this.finishEditing()).dimensions(this.width / 2 - 125, this.height * 3 / 4, 100, 20).build();
+        Button applyButton = Button.builder(CommonComponents.GUI_DONE, button -> this.write()).bounds(this.width / 2 + 25, this.height * 3 / 4, 100, 20).build();
+        Button cancelButton = Button.builder(CommonComponents.GUI_CANCEL, button -> this.finishEditing()).bounds(this.width / 2 - 125, this.height * 3 / 4, 100, 20).build();
 
-		this.addDrawableChild(this.nameField);
-		this.addDrawableChild(applyButton);
-		this.addDrawableChild(cancelButton);
+		this.addRenderableWidget(this.nameField);
+		this.addRenderableWidget(applyButton);
+		this.addRenderableWidget(cancelButton);
     }
 
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+	public boolean keyPressed(KeyEvent keyEvent) {
+		if (keyEvent.key() == GLFW.GLFW_KEY_ENTER || keyEvent.key() == GLFW.GLFW_KEY_KP_ENTER) {
 			this.write();
 			return true;
 		} else {
-			return super.keyPressed(keyCode, scanCode, modifiers);
+			return super.keyPressed(keyEvent);
 		}
 	}
 
 	@Override
-	public boolean charTyped(char chr, int modifiers) {
-		return this.nameField.charTyped(chr, modifiers);
+	public boolean charTyped(CharacterEvent characterEvent) {
+		return this.nameField.charTyped(characterEvent);
 	}
 
 	@Override
-	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+	public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
 		super.render(context, mouseX, mouseY, delta);
-		DiffuseLighting.disableGuiDepthLighting();
-		context.drawCenteredTextWithShadow(this.textRenderer, title, this.width / 2, 40, 16777215);
-		DiffuseLighting.enableGuiDepthLighting();
+		context.drawCenteredString(this.font, title, this.width / 2, 40, 16777215);
 	}
 
 	@Override
-	public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-		this.renderInGameBackground(context);
-		context.drawTexture(TEXTURE, this.width / 2 - 72, this.height / 2 - 48, 0, 0, 256, 256);
+	public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+		this.renderTransparentBackground(context);
+		context.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, this.width / 2 - 72, this.height / 2 - 48, 0, 0, this.width, this.height, 256, 256);
 	}
 
 	@Override
-	public void close() {
+	public void onClose() {
 		this.finishEditing();
 	}
 
 	@Override
-	public boolean shouldPause() {
+	public boolean isPauseScreen() {
 		return false;
 	}
 
 	private void finishEditing() {
-		this.client.setScreen(null);
+		this.minecraft.setScreen(null);
 	}
 
 	private void write() {
-		ClientPlayNetworking.send(new RenameNameTagPayload(this.nameField.getText(), this.hand == Hand.MAIN_HAND));
+		ClientPlayNetworking.send(new RenameNameTagPayload(this.nameField.getValue(), this.hand == InteractionHand.MAIN_HAND));
 		this.finishEditing();
 	}
 }

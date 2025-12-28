@@ -1,22 +1,22 @@
 package net.pm.magicky.enchantment;
 
-import net.minecraft.block.ChiseledBookshelfBlock;
-import net.minecraft.block.EnchantingTableBlock;
-import net.minecraft.block.entity.ChiseledBookshelfBlockEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.EnchantmentLevelEntry;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.EnchantmentTags;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.EnchantmentTags;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.ChiseledBookShelfBlock;
+import net.minecraft.world.level.block.EnchantingTableBlock;
+import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 import net.pm.magicky.screen.EnchantmentScreenHandlerM;
 
 import java.util.ArrayList;
@@ -39,50 +39,50 @@ public class EnchantmentCatalysts {
         @Override
         public boolean canApplyIncompatible() {return false;}
         @Override
-        public int catCost(EnchantmentScreenHandlerM handler, int index, World world) {
+        public int catCost(EnchantmentScreenHandlerM handler, int index, Level world) {
             return catCost(handler.enchantmentLevels.get(index), handler.getEnchantment(world, index));
         }
         @Override
-        public int xpCost(EnchantmentScreenHandlerM handler, int index, World world) {
+        public int xpCost(EnchantmentScreenHandlerM handler, int index, Level world) {
             return xpCost(handler.enchantmentLevels.get(index), handler.getEnchantment(world, index));
         }
         @Override
-        public int catCost(int level, RegistryEntry<Enchantment> enchantment) {
-            return (level > -1 && enchantment != null) ? ((2 * level) - 1) * (enchantment.isIn(EnchantmentTags.TREASURE) ? 2 : 1) : 0;
+        public int catCost(int level, Holder<Enchantment> enchantment) {
+            return (level > -1 && enchantment != null) ? ((2 * level) - 1) * (enchantment.is(EnchantmentTags.TREASURE) ? 2 : 1) : 0;
         }
         @Override
-        public int xpCost(int level, RegistryEntry<Enchantment> enchantment) {
-            return (level > -1 && enchantment != null) ? level * (enchantment.isIn(EnchantmentTags.TREASURE) ? 2 : 1) : 0;
+        public int xpCost(int level, Holder<Enchantment> enchantment) {
+            return (level > -1 && enchantment != null) ? level * (enchantment.is(EnchantmentTags.TREASURE) ? 2 : 1) : 0;
         }
         @Override
-        public List<EnchantmentLevelEntry> getAllEnchantments(EnchantmentScreenHandlerM handler, World world, BlockPos pos) {
-            List<EnchantmentLevelEntry> availableList = new ArrayList<>();
+        public List<EnchantmentInstance> getAllEnchantments(EnchantmentScreenHandlerM handler, Level world, BlockPos pos) {
+            List<EnchantmentInstance> availableList = new ArrayList<>();
             //TODO: check that bookshelf has line of sight maybe
             //TODO: add the "basic enchantments" however i end up implementing those
             //foreach position
-            for (BlockPos offsetPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
-                BlockPos blockPos = pos.add(offsetPos);
+            for (BlockPos offsetPos : EnchantingTableBlock.BOOKSHELF_OFFSETS) {
+                BlockPos blockPos = pos.offset(offsetPos);
                 //if it's a chiseled bookshelf
-                if (world.getBlockState(blockPos).getBlock() instanceof ChiseledBookshelfBlock && world.getBlockEntity(blockPos) instanceof ChiseledBookshelfBlockEntity blockEntity) {
+                if (world.getBlockState(blockPos).getBlock() instanceof ChiseledBookShelfBlock && world.getBlockEntity(blockPos) instanceof ChiseledBookShelfBlockEntity blockEntity) {
                     //all the slots
-                    for (int i = 0; i < blockEntity.size(); i++) {
+                    for (int i = 0; i < blockEntity.getContainerSize(); i++) {
                         //for all the enchantments (if any are present)
-                        for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getEnchantments().getEnchantments()) {
-                            EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getEnchantments().getLevel(enchantment));
+                        for (Holder<Enchantment> enchantment : blockEntity.getItem(i).getEnchantments().keySet()) {
+                            EnchantmentInstance entry = new EnchantmentInstance(enchantment, blockEntity.getItem(i).getEnchantments().getLevel(enchantment));
                             //add only new ones
                             boolean present = false;
-                            for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                            for (EnchantmentInstance listEntry : availableList) if (listEntry.enchantment() == entry.enchantment() && listEntry.level() == entry.level()) {
                                 present = true;
                                 break;
                             }
                             if (!present) availableList.add(entry);
                         }
                         //same with stored enchantements
-                        for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getEnchantments()) {
-                            EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getLevel(enchantment));
+                        for (Holder<Enchantment> enchantment : blockEntity.getItem(i).getComponents().getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).keySet()) {
+                            EnchantmentInstance entry = new EnchantmentInstance(enchantment, blockEntity.getItem(i).getComponents().getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).getLevel(enchantment));
                             //add only new ones
                             boolean present = false;
-                            for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                            for (EnchantmentInstance listEntry : availableList) if (listEntry.enchantment() == entry.enchantment() && listEntry.level() == entry.level()) {
                                 present = true;
                                 break;
                             }
@@ -95,13 +95,13 @@ public class EnchantmentCatalysts {
         }
 
         @Override
-        public ItemStack enchant(Inventory inventory, ItemStack item, RegistryEntry<Enchantment> enchantment, int level) {
-            if (item.isOf(Items.BOOK)) {
-                item = inventory.getStack(0).withItem(Items.ENCHANTED_BOOK);
-                inventory.setStack(0, item);
+        public ItemStack enchant(Container inventory, ItemStack item, Holder<Enchantment> enchantment, int level) {
+            if (item.is(Items.BOOK)) {
+                item = inventory.getItem(0).transmuteCopy(Items.ENCHANTED_BOOK);
+                inventory.setItem(0, item);
             }
 
-            item.addEnchantment(enchantment, level);
+            item.enchant(enchantment, level);
             return item;
         }
     }
@@ -112,50 +112,50 @@ public class EnchantmentCatalysts {
         @Override
         public boolean canApplyIncompatible() {return true;}
         @Override
-        public int catCost(EnchantmentScreenHandlerM handler, int index, World world) {
+        public int catCost(EnchantmentScreenHandlerM handler, int index, Level world) {
             return catCost(handler.enchantmentLevels.get(index), handler.getEnchantment(world, index));
         }
         @Override
-        public int xpCost(EnchantmentScreenHandlerM handler, int index, World world) {
+        public int xpCost(EnchantmentScreenHandlerM handler, int index, Level world) {
             return xpCost(handler.enchantmentLevels.get(index), handler.getEnchantment(world, index));
         }
         @Override
-        public int catCost(int level, RegistryEntry<Enchantment> enchantment) {
+        public int catCost(int level, Holder<Enchantment> enchantment) {
             return (level > -1 && enchantment != null) ? 1 : 0;
         }
         @Override
-        public int xpCost(int level, RegistryEntry<Enchantment> enchantment) {
-            return (level > -1 && enchantment != null) ? level * (enchantment.isIn(EnchantmentTags.TREASURE) ? 4 : 2) : 0;
+        public int xpCost(int level, Holder<Enchantment> enchantment) {
+            return (level > -1 && enchantment != null) ? level * (enchantment.is(EnchantmentTags.TREASURE) ? 4 : 2) : 0;
         }
         @Override
-        public List<EnchantmentLevelEntry> getAllEnchantments(EnchantmentScreenHandlerM handler, World world, BlockPos pos) {
-            List<EnchantmentLevelEntry> availableList = new ArrayList<>();
+        public List<EnchantmentInstance> getAllEnchantments(EnchantmentScreenHandlerM handler, Level world, BlockPos pos) {
+            List<EnchantmentInstance> availableList = new ArrayList<>();
             //TODO: check that bookshelf has line of sight maybe
             //TODO: add the "basic enchantments" however i end up implementing those
             //foreach position
-            for (BlockPos offsetPos : EnchantingTableBlock.POWER_PROVIDER_OFFSETS) {
-                BlockPos blockPos = pos.add(offsetPos);
+            for (BlockPos offsetPos : EnchantingTableBlock.BOOKSHELF_OFFSETS) {
+                BlockPos blockPos = pos.offset(offsetPos);
                 //if it's a chiseled bookshelf
-                if (world.getBlockState(blockPos).getBlock() instanceof ChiseledBookshelfBlock && world.getBlockEntity(blockPos) instanceof ChiseledBookshelfBlockEntity blockEntity) {
+                if (world.getBlockState(blockPos).getBlock() instanceof ChiseledBookShelfBlock && world.getBlockEntity(blockPos) instanceof ChiseledBookShelfBlockEntity blockEntity) {
                     //all the slots
-                    for (int i = 0; i < blockEntity.size(); i++) {
+                    for (int i = 0; i < blockEntity.getContainerSize(); i++) {
                         //for all the enchantments (if any are present)
-                        for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getEnchantments().getEnchantments()) {
-                            EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getEnchantments().getLevel(enchantment));
+                        for (Holder<Enchantment> enchantment : blockEntity.getItem(i).getEnchantments().keySet()) {
+                            EnchantmentInstance entry = new EnchantmentInstance(enchantment, blockEntity.getItem(i).getEnchantments().getLevel(enchantment));
                             //add only new ones
                             boolean present = false;
-                            for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                            for (EnchantmentInstance listEntry : availableList) if (listEntry.enchantment() == entry.enchantment() && listEntry.level() == entry.level()) {
                                 present = true;
                                 break;
                             }
                             if (!present) availableList.add(entry);
                         }
                         //same with stored enchantements
-                        for (RegistryEntry<Enchantment> enchantment : blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getEnchantments()) {
-                            EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, blockEntity.getStack(i).getComponents().getOrDefault(DataComponentTypes.STORED_ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT).getLevel(enchantment));
+                        for (Holder<Enchantment> enchantment : blockEntity.getItem(i).getComponents().getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).keySet()) {
+                            EnchantmentInstance entry = new EnchantmentInstance(enchantment, blockEntity.getItem(i).getComponents().getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).getLevel(enchantment));
                             //add only new ones
                             boolean present = false;
-                            for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                            for (EnchantmentInstance listEntry : availableList) if (listEntry.enchantment() == entry.enchantment() && listEntry.level() == entry.level()) {
                                 present = true;
                                 break;
                             }
@@ -168,13 +168,13 @@ public class EnchantmentCatalysts {
         }
 
         @Override
-        public ItemStack enchant(Inventory inventory, ItemStack item, RegistryEntry<Enchantment> enchantment, int level) {
-            if (item.isOf(Items.BOOK)) {
-                item = inventory.getStack(0).withItem(Items.ENCHANTED_BOOK);
-                inventory.setStack(0, item);
+        public ItemStack enchant(Container inventory, ItemStack item, Holder<Enchantment> enchantment, int level) {
+            if (item.is(Items.BOOK)) {
+                item = inventory.getItem(0).transmuteCopy(Items.ENCHANTED_BOOK);
+                inventory.setItem(0, item);
             }
 
-            item.addEnchantment(enchantment, level);
+            item.enchant(enchantment, level);
             return item;
         }
     }
@@ -185,32 +185,32 @@ public class EnchantmentCatalysts {
         @Override
         public boolean canApplyIncompatible() {return false;}
         @Override
-        public int catCost(EnchantmentScreenHandlerM handler, int index, World world) {
+        public int catCost(EnchantmentScreenHandlerM handler, int index, Level world) {
             return 0;
         }
         @Override
-        public int xpCost(EnchantmentScreenHandlerM handler, int index, World world) {
+        public int xpCost(EnchantmentScreenHandlerM handler, int index, Level world) {
             return xpCost(handler.enchantmentLevels.get(index), handler.getEnchantment(world, index));
         }
         @Override
-        public int catCost(int level, RegistryEntry<Enchantment> enchantment) {
+        public int catCost(int level, Holder<Enchantment> enchantment) {
             return 0;
         }
         @Override
-        public int xpCost(int level, RegistryEntry<Enchantment> enchantment) {
-            return (level > -1 && enchantment != null) ? level * (enchantment.isIn(EnchantmentTags.TREASURE) ? 4 : 2) : 0;
+        public int xpCost(int level, Holder<Enchantment> enchantment) {
+            return (level > -1 && enchantment != null) ? level * (enchantment.is(EnchantmentTags.TREASURE) ? 4 : 2) : 0;
         }
         @Override
-        public List<EnchantmentLevelEntry> getAllEnchantments(EnchantmentScreenHandlerM handler, World world, BlockPos pos) {
-            List<EnchantmentLevelEntry> availableList = new ArrayList<>();
+        public List<EnchantmentInstance> getAllEnchantments(EnchantmentScreenHandlerM handler, Level world, BlockPos pos) {
+            List<EnchantmentInstance> availableList = new ArrayList<>();
 
-            ItemStack catalyst = handler.getSlot(1).getStack();
+            ItemStack catalyst = handler.getSlot(1).getItem();
 
-            for (RegistryEntry<Enchantment> enchantment : catalyst.getEnchantments().getEnchantments()) {
-                EnchantmentLevelEntry entry = new EnchantmentLevelEntry(enchantment, catalyst.getEnchantments().getLevel(enchantment));
+            for (Holder<Enchantment> enchantment : catalyst.getEnchantments().keySet()) {
+                EnchantmentInstance entry = new EnchantmentInstance(enchantment, catalyst.getEnchantments().getLevel(enchantment));
                 //add only new ones
                 boolean present = false;
-                for (EnchantmentLevelEntry listEntry : availableList) if (listEntry.enchantment == entry.enchantment && listEntry.level == entry.level) {
+                for (EnchantmentInstance listEntry : availableList) if (listEntry.enchantment() == entry.enchantment() && listEntry.level() == entry.level()) {
                     present = true;
                     break;
                 }
@@ -221,18 +221,18 @@ public class EnchantmentCatalysts {
         }
 
         @Override
-        public ItemStack enchant(Inventory inventory, ItemStack item, RegistryEntry<Enchantment> newEnchantment, int level) {
+        public ItemStack enchant(Container inventory, ItemStack item, Holder<Enchantment> newEnchantment, int level) {
             //TODO: deal with enchanted books and enchanting books
-            ItemStack catStack = inventory.getStack(1);
-            EnchantmentHelper.apply(catStack, components -> components.remove(enchantment -> enchantment.matchesId(Identifier.of(newEnchantment.getIdAsString()))));
-            inventory.setStack(1, catStack);
+            ItemStack catStack = inventory.getItem(1);
+            EnchantmentHelper.updateEnchantments(catStack, components -> components.removeIf(enchantment -> enchantment.is(Identifier.parse(newEnchantment.getRegisteredName()))));
+            inventory.setItem(1, catStack);
 
-            if (item.isOf(Items.BOOK)) {
-                item = inventory.getStack(0).withItem(Items.ENCHANTED_BOOK);
-                inventory.setStack(0, item);
+            if (item.is(Items.BOOK)) {
+                item = inventory.getItem(0).transmuteCopy(Items.ENCHANTED_BOOK);
+                inventory.setItem(0, item);
             }
 
-            item.addEnchantment(newEnchantment, level);
+            item.enchant(newEnchantment, level);
 
             return item;
         }

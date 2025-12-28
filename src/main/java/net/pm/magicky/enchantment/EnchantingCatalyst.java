@@ -1,12 +1,12 @@
 package net.pm.magicky.enchantment;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentLevelEntry;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.level.Level;
 import net.pm.magicky.screen.EnchantmentScreenHandlerM;
 
 import java.util.List;
@@ -14,15 +14,15 @@ import java.util.List;
 public interface EnchantingCatalyst {
     boolean canSkipLevels();
     boolean canApplyIncompatible();
-    int catCost(int level, RegistryEntry<Enchantment> enchantment);
+    int catCost(int level, Holder<Enchantment> enchantment);
 
-    int catCost(EnchantmentScreenHandlerM handler, int index, World world);
+    int catCost(EnchantmentScreenHandlerM handler, int index, Level world);
 
-    int xpCost(int level, RegistryEntry<Enchantment> enchantment);
+    int xpCost(int level, Holder<Enchantment> enchantment);
 
-    int xpCost(EnchantmentScreenHandlerM handler, int index, World world);
+    int xpCost(EnchantmentScreenHandlerM handler, int index, Level world);
 
-    List<EnchantmentLevelEntry> getAllEnchantments(EnchantmentScreenHandlerM handler, World world, BlockPos pos);
+    List<EnchantmentInstance> getAllEnchantments(EnchantmentScreenHandlerM handler, Level world, BlockPos pos);
 
-    ItemStack enchant(Inventory inventory, ItemStack item, RegistryEntry<Enchantment> enchantment, int level);
+    ItemStack enchant(Container inventory, ItemStack item, Holder<Enchantment> enchantment, int level);
 }

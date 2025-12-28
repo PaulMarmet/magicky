@@ -1,15 +1,15 @@
 package net.pm.magicky.screen;
 
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.resource.featuretoggle.FeatureFlags;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.MenuType;
 import net.pm.magicky.Magicky;
 
 public class MagickyScreenHandlers {
-    public static final ScreenHandlerType<AnvilScreenHandlerM> ANVIL_M = Registry.register(Registries.SCREEN_HANDLER, Identifier.of(Magicky.MOD_ID, "anvil_m"), new ScreenHandlerType<>(AnvilScreenHandlerM::new, FeatureFlags.VANILLA_FEATURES));
-    public static final ScreenHandlerType<EnchantmentScreenHandlerM> ENCHANTMENT_M = Registry.register(Registries.SCREEN_HANDLER, Identifier.of(Magicky.MOD_ID, "enchantment_m"), new ScreenHandlerType<>(EnchantmentScreenHandlerM::new, FeatureFlags.VANILLA_FEATURES));
+    public static final MenuType<AnvilScreenHandlerM> ANVIL_M = Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(Magicky.MOD_ID, "anvil_m"), new MenuType<>(AnvilScreenHandlerM::new, FeatureFlags.VANILLA_SET));
+    public static final MenuType<EnchantmentScreenHandlerM> ENCHANTMENT_M = Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(Magicky.MOD_ID, "enchantment_m"), new MenuType<>(EnchantmentScreenHandlerM::new, FeatureFlags.VANILLA_SET));
 
     public static void registerScreenHandlers() {
 

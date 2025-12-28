@@ -10,7 +10,7 @@
 	"contact": {
 		"sources": "https://github.com/PaulMarmet/magicky"
 	},
-	"license": "ARR",
+	"license": "All-Rights-Reserved",
 	"icon": "assets/magicky/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -28,8 +28,8 @@
 		"magicky.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.15.11",
-		"minecraft": "~1.21",
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
 		"java": ">=21",
 		"fabric-api": "*"
 	}

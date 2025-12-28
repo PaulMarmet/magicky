@@ -2,80 +2,81 @@ package net.pm.magicky.client.gui.screen.ingame;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.ForgingScreen;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.text.StringVisitable;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.ItemCombinerScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.pm.magicky.Magicky;
 import net.pm.magicky.screen.AnvilScreenHandlerM;
 
 
 @Environment(EnvType.CLIENT)
-public class AnvilScreenM extends ForgingScreen<AnvilScreenHandlerM> {
-    private static final Identifier ERROR_TEXTURE = Identifier.ofVanilla("container/anvil/error");
-    private static final Identifier TEXTURE = Identifier.of(Magicky.MOD_ID, "textures/gui/container/anvil.png");
-    private static final Text TOO_EXPENSIVE_TEXT = Text.translatable("container.repair.expensive");
-    private final PlayerEntity player;
+public class AnvilScreenM extends ItemCombinerScreen<AnvilScreenHandlerM> {
+    private static final Identifier ERROR_TEXTURE = Identifier.withDefaultNamespace("container/anvil/error");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(Magicky.MOD_ID, "textures/gui/container/anvil.png");
+    private static final Component TOO_EXPENSIVE_TEXT = Component.translatable("container.repair.expensive");
+    private final Player player;
 
-    public AnvilScreenM(AnvilScreenHandlerM handler, PlayerInventory inventory, Text title) {
+    public AnvilScreenM(AnvilScreenHandlerM handler, Inventory inventory, Component title) {
         super(handler, inventory, title, TEXTURE);
         this.player = inventory.player;
-        this.titleX = 60;
+        this.titleLabelX = 60;
     }
 
-    protected void setup() {
-        int i = (this.width - this.backgroundWidth) / 2;
-        int j = (this.height - this.backgroundHeight) / 2;
+    protected void subInit() {
+        int i = (this.width - this.imageWidth) / 2;
+        int j = (this.height - this.imageHeight) / 2;
     }
 
-    public void resize(MinecraftClient client, int width, int height) {
-        this.init(client, width, height);
+    public void resize(int i, int j) {
+        this.init(i, j);
     }
 
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256) {
-            this.client.player.closeHandledScreen();
+    public boolean keyPressed(KeyEvent keyEvent) {
+        if (keyEvent.key() == 256) {
+            this.minecraft.player.closeContainer();
         }
 
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(keyEvent);
     }
 
-    protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
-        super.drawForeground(context, mouseX, mouseY);
-        int i = ((AnvilScreenHandlerM)this.handler).getLevelCost();
+    protected void renderLabels(GuiGraphics context, int mouseX, int mouseY) {
+        super.renderLabels(context, mouseX, mouseY);
+        int i = ((AnvilScreenHandlerM)this.menu).getLevelCost();
         if (i > 0) {
             int j = 8453920;
             Object text;
-            if (!((AnvilScreenHandlerM)this.handler).getSlot(2).hasStack()) {
+            if (!((AnvilScreenHandlerM)this.menu).getSlot(2).hasItem()) {
                 text = null;
             } else {
-                text = Text.translatable("container.repair.cost", new Object[]{i});
-                if (!((AnvilScreenHandlerM)this.handler).getSlot(2).canTakeItems(this.player)) {
+                text = Component.translatable("container.repair.cost", new Object[]{i});
+                if (!((AnvilScreenHandlerM)this.menu).getSlot(2).mayPickup(this.player)) {
                     j = 16736352;
                 }
             }
 
             if (text != null) {
-                int k = this.backgroundWidth - 8 - this.textRenderer.getWidth((StringVisitable)text) - 2;
+                int k = this.imageWidth - 8 - this.font.width((FormattedText)text) - 2;
                 boolean l = true;
-                context.fill(k - 2, 67, this.backgroundWidth - 8, 79, 1325400064);
-                context.drawTextWithShadow(this.textRenderer, (Text)text, k, 69, j);
+                context.fill(k - 2, 67, this.imageWidth - 8, 79, 1325400064);
+                context.drawString(this.font, (Component)text, k, 69, j);
             }
         }
 
     }
 
-    protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        super.drawBackground(context, delta, mouseX, mouseY);
+    protected void renderBg(GuiGraphics context, float delta, int mouseX, int mouseY) {
+        super.renderBg(context, delta, mouseX, mouseY);
     }
 
-    protected void drawInvalidRecipeArrow(DrawContext context, int x, int y) {
-        if ((((AnvilScreenHandlerM)this.handler).getSlot(0).hasStack() || ((AnvilScreenHandlerM)this.handler).getSlot(1).hasStack()) && !((AnvilScreenHandlerM)this.handler).getSlot(((AnvilScreenHandlerM)this.handler).getResultSlotIndex()).hasStack()) {
-            context.drawGuiTexture(ERROR_TEXTURE, x + 99, y + 45, 28, 21);
+    protected void renderErrorIcon(GuiGraphics context, int x, int y) {
+        if ((((AnvilScreenHandlerM)this.menu).getSlot(0).hasItem() || ((AnvilScreenHandlerM)this.menu).getSlot(1).hasItem()) && !((AnvilScreenHandlerM)this.menu).getSlot(((AnvilScreenHandlerM)this.menu).getResultSlot()).hasItem()) {
+            context.blitSprite(RenderPipelines.GUI_TEXTURED,ERROR_TEXTURE, x + 99, y + 45, 28, 21);
         }
 
     }

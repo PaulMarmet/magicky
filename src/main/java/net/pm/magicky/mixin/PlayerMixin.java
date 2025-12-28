@@ -1,15 +1,15 @@
 package net.pm.magicky.mixin;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Hand;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.pm.magicky.screen.NameTagInt;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(PlayerEntity.class)
+@Mixin(Player.class)
 public class PlayerMixin implements NameTagInt {
 
     @Override
-    public void useNameTag(Hand hand) {
+    public void magicky$useNameTag(InteractionHand hand) {
 
     }
 }

@@ -1,7 +1,7 @@
 package net.pm.magicky.screen;
 
-import net.minecraft.util.Hand;
+import net.minecraft.world.InteractionHand;
 
 public interface NameTagInt {
-    void useNameTag(Hand hand);
+    void magicky$useNameTag(InteractionHand hand);
 }

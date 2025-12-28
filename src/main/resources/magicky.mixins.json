@@ -7,11 +7,9 @@
     "EnchantingTableBlockMixin",
     "EnchantmentHelperMixin",
     "ItemMixin",
-    "ItemsMixin",
     "NameTagItemMixin",
     "PlayerMixin",
-    "ProjectileEntityMixin",
-    "ToolMaterialsMixin"
+    "ProjectileEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
