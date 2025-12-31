@@ -20,10 +20,6 @@ public record RecoilEnchantmentEffect(LevelBasedValue value) implements Enchantm
         })).apply(instance, RecoilEnchantmentEffect::new);
     });
 
-    public RecoilEnchantmentEffect(LevelBasedValue value) {
-        this.value = value;
-    }
-
     public void apply(ServerLevel world, int level, EnchantedItemInUse context, Entity user, Vec3 pos) {
         if(user instanceof Projectile) {
             Entity owner = ((Projectile) user).getOwner();

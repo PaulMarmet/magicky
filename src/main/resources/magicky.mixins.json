@@ -6,10 +6,10 @@
     "AnvilBlockMixin",
     "EnchantingTableBlockMixin",
     "EnchantmentHelperMixin",
+    "EnchantmentsMixin",
     "ItemMixin",
     "NameTagItemMixin",
-    "PlayerMixin",
-    "ProjectileEntityMixin"
+    "PlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

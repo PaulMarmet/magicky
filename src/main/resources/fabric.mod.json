@@ -3,7 +3,7 @@
 	"id": "magicky",
 	"version": "${version}",
 	"name": "Magicky",
-	"description": "An overhaul to vanilla's enchants to make them slightly more interesting.",
+	"description": "An enchantment overhaul to spice things up.",
 	"authors": [
 		"Paul Marmet"
 	],
@@ -21,7 +21,7 @@
 			"net.pm.magicky.MagickyClient"
 		],
 		"fabric-datagen": [
-			"net.pm.magicky.MagickyDataGenerator"
+			"net.pm.magicky.datagen.MagickyDataGenerator"
 		]
 	},
 	"mixins": [
